@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useState } from "react";
+import { router } from "expo-router";
 
 interface CardProps {
   title: string;
@@ -17,7 +18,15 @@ export default function Card({
 }: CardProps) {
   const [isCompleted, setIsCompleted] = useState(completed);
   return (
-    <View className="flex-row items-center justify-between w-full h-[100px] bg-white border-2 border-black/20 rounded-xl mb-2">
+    <Pressable
+      onPress={() => {
+        router.push({
+          pathname: "/task-modal",
+          params: { title, description },
+        });
+      }}
+      className="flex-row items-center justify-between w-full h-[100px] bg-white border-2 border-black/20 rounded-xl mb-2"
+    >
       <View className="flex-col items-center gap-2">
         <Text className="text-2xl text-left w-full pl-4 font-bold">
           {title}
@@ -47,6 +56,6 @@ export default function Card({
           color="red"
         />
       </View>
-    </View>
+    </Pressable>
   );
 }
