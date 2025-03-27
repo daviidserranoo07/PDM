@@ -1,29 +1,66 @@
-import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  Platform,
+} from "react-native";
 import { useState } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { useNavigation } from "@react-navigation/native";
+import * as Crypto from "expo-crypto";
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  date: Date;
+  location: Location;
+  priority: string;
+}
+
+interface Location {
+  coords: {
+    latitude: number;
+    longitude: number;
+  };
+  address: string;
+}
 
 export default function CreateTask() {
   const params = useLocalSearchParams();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [location, setLocation] = useState(
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [location, setLocation] = useState<Location | null>(
     params.location ? JSON.parse(params.location as string) : null
   );
-  const [priority, setPriority] = useState("normal"); // 'normal' o 'urgent'
+  const [priority, setPriority] = useState("Normal"); // 'normal' o 'urgent'
 
   const handleSubmit = async () => {
     try {
-      // Crear nueva tarea
-      const newTask = {
-        id: Date.now().toString(), // ID único
+      const newTask: Task = {
+        id: Crypto.randomUUID(),
         title,
         description,
-        location,
+        location: location || {
+          coords: {
+            latitude: 0,
+            longitude: 0,
+          },
+          address: "",
+        },
         priority,
         completed: false,
-        createdAt: new Date().toISOString(),
+        date: date,
       };
 
       // Obtener tareas existentes
@@ -40,7 +77,7 @@ export default function CreateTask() {
       setTitle("");
       setDescription("");
       setLocation(null);
-      setPriority("normal");
+      setPriority("Normal");
 
       router.back();
     } catch (error) {
@@ -52,6 +89,13 @@ export default function CreateTask() {
   // Validación antes de guardar
   const isFormValid = () => {
     return title.trim() !== "" && description.trim() !== "";
+  };
+
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setDate(date);
+    }
   };
 
   return (
@@ -85,15 +129,21 @@ export default function CreateTask() {
         {/* Fecha */}
         <View className="gap-2">
           <Text className="text-lg font-medium text-gray-700">Fecha</Text>
-          <TextInput
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Describe la tarea"
-            multiline
-            numberOfLines={4}
+          <Pressable
+            onPress={() => setShowDatePicker(true)}
             className="w-full p-3 border border-gray-300 rounded-xl"
-            textAlignVertical="top"
-          />
+          >
+            <Text className="text-gray-700">{date.toLocaleDateString()}</Text>
+          </Pressable>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              onChange={handleDateChange}
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+            />
+          )}
         </View>
 
         {/* Ubicación */}
@@ -119,32 +169,32 @@ export default function CreateTask() {
           <Text className="text-lg font-medium text-gray-700">Prioridad</Text>
           <View className="flex-row gap-4">
             <Pressable
-              onPress={() => setPriority("normal")}
+              onPress={() => setPriority("Normal")}
               className={`flex-1 p-3 rounded-xl border ${
-                priority === "normal"
+                priority === "Normal"
                   ? "bg-blue-500 border-blue-500"
                   : "border-gray-300"
               }`}
             >
               <Text
                 className={`text-center font-medium ${
-                  priority === "normal" ? "text-white" : "text-gray-700"
+                  priority === "Normal" ? "text-white" : "text-gray-700"
                 }`}
               >
                 Normal
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setPriority("urgent")}
+              onPress={() => setPriority("Urgente")}
               className={`flex-1 p-3 rounded-xl border ${
-                priority === "urgent"
+                priority === "Urgente"
                   ? "bg-red-500 border-red-500"
                   : "border-gray-300"
               }`}
             >
               <Text
                 className={`text-center font-medium ${
-                  priority === "urgent" ? "text-white" : "text-gray-700"
+                  priority === "Urgente" ? "text-white" : "text-gray-700"
                 }`}
               >
                 Urgente

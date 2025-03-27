@@ -1,15 +1,27 @@
-import { View, Text, Pressable, Dimensions } from "react-native";
+import { View, Text, Pressable, Dimensions, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import * as Location from "expo-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, MapPressEvent } from "react-native-maps";
+import { LocationObject, LocationObjectCoords } from "expo-location";
+
+const { width, height } = Dimensions.get("window");
+
+interface Location {
+  coords: {
+    latitude: number;
+    longitude: number;
+  };
+  address: string;
+}
 
 export default function LocationModal() {
-  const [location, setLocation] = useState(null);
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [address, setAddress] = useState("");
+  const [location, setLocation] = useState<LocationObject | null>(null);
+  const [selectedLocation, setSelectedLocation] =
+    useState<LocationObjectCoords | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [address, setAddress] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -42,9 +54,17 @@ export default function LocationModal() {
     })();
   }, []);
 
-  const handleSelectLocation = async (event) => {
+  const handleSelectLocation = async (event: MapPressEvent) => {
     const coords = event.nativeEvent.coordinate;
-    setSelectedLocation(coords);
+    setSelectedLocation({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      altitude: 0,
+      accuracy: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      speed: 0,
+    });
 
     // Actualizar dirección al seleccionar nueva ubicación
     try {
@@ -53,11 +73,21 @@ export default function LocationModal() {
         longitude: coords.longitude,
       });
       if (address[0]) {
-        setAddress(
-          `${address[0].street || ""} ${address[0].name || ""}, ${
-            address[0].city || ""
-          }`
-        );
+        const addressStr = `${address[0].street || ""} ${
+          address[0].name || ""
+        }, ${address[0].city || ""}`;
+        setAddress(addressStr);
+
+        // Navegar de vuelta con la ubicación seleccionada
+        router.push({
+          pathname: "/Create",
+          params: {
+            location: JSON.stringify({
+              coords: coords,
+              address: addressStr,
+            }),
+          },
+        });
       }
     } catch (error) {
       console.log("Error getting address:", error);
@@ -65,8 +95,8 @@ export default function LocationModal() {
   };
 
   return (
-    <View className="flex-1">
-      <View className="flex-1 bg-white">
+    <View style={styles.container}>
+      <View style={styles.content}>
         {/* Header */}
         <View className="flex-row justify-between items-center p-4 bg-white">
           <Text className="text-xl font-bold">Seleccionar ubicación</Text>
@@ -77,9 +107,9 @@ export default function LocationModal() {
 
         {/* Mapa */}
         {location ? (
-          <View className="flex-1">
+          <View style={styles.mapContainer}>
             <MapView
-              className="w-full h-full"
+              style={styles.map}
               initialRegion={{
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
@@ -118,7 +148,7 @@ export default function LocationModal() {
             onPress={() => {
               if (selectedLocation) {
                 router.push({
-                  pathname: "/(tabs)/create",
+                  pathname: "/Create",
                   params: {
                     location: JSON.stringify({
                       coords: selectedLocation,
@@ -138,3 +168,23 @@ export default function LocationModal() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  mapContainer: {
+    flex: 1,
+    height: height * 0.6,
+    overflow: "hidden",
+  },
+  map: {
+    width: width,
+    height: "100%",
+    ...StyleSheet.absoluteFillObject,
+  },
+});

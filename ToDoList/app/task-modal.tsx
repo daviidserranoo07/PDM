@@ -2,8 +2,36 @@ import { View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  date: Date;
+  location?: {
+    coords: {
+      latitude: number;
+      longitude: number;
+    };
+    address: string;
+  };
+  priority?: string;
+  createdAt?: string;
+}
+
+interface Location {
+  coords: {
+    latitude: number;
+    longitude: number;
+  };
+  address: string;
+}
+
 export default function TaskModal() {
-  const { title, description } = useLocalSearchParams();
+  const { title, description, completed, date, location, priority } =
+    useLocalSearchParams();
+
+  console.log("location", location);
 
   return (
     <View className="flex-1 bg-black/50 justify-center items-center p-4">
@@ -23,6 +51,13 @@ export default function TaskModal() {
             <Text className="text-lg">{description}</Text>
           </View>
 
+          <View>
+            <Text className="text-gray-500">Ubicación:</Text>
+            <Text className="text-lg">
+              {JSON.parse(location as string)?.address || "Sin ubicación"}
+            </Text>
+          </View>
+
           {/* Puedes añadir más información aquí */}
           <View>
             <Text className="text-gray-500">Estado:</Text>
@@ -30,9 +65,12 @@ export default function TaskModal() {
               <MaterialCommunityIcons
                 name="check-circle"
                 size={24}
-                color="green"
+                className={`mt-2`}
+                color={`${completed ? "green" : "red"}`}
               />
-              <Text className="text-lg">Pendiente</Text>
+              <Text className="text-lg">
+                {completed ? "Completado" : "Pendiente"}
+              </Text>
             </View>
           </View>
         </View>
