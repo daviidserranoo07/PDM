@@ -102,6 +102,7 @@ export default function LocationModal() {
         {location ? (
           <View style={styles.mapContainer}>
             <MapView
+                provider={MapView.PROVIDER_DEFAULT}
               style={styles.map}
               initialRegion={{
                 latitude: location.coords.latitude,

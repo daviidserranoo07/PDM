@@ -31,14 +31,6 @@ const getDistanceInMeters = (
   return R * c; // en metros
 };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
 export default function Index() {
   const [activeTab, setActiveTab] = useState("Urgente");
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -73,7 +65,7 @@ export default function Index() {
       //Si tenemos ubicación actual entonces obtenemos las tareas cercanas, en caso de que no nada
       let nearbyTasks = [] as Task[];
       if(location){
-          nearbyTasks = (await getNearbyTasks(allTasks, location)) || [];
+          nearbyTasks = (await getNearbyTasks(tasks, location)) || [];
       }
 
       console.log("Tareas cercanas urgentes:", nearbyTasks.length);
