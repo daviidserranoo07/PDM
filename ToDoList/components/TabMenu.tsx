@@ -4,10 +4,12 @@ import { useState } from "react";
 export default function TabMenu({
   options,
   activeTab,
+  defaultTab,
   setActiveTab,
 }: {
   options: string[];
   activeTab: string;
+  defaultTab: string;
   setActiveTab: (tab: string) => void;
 }) {
   return (
@@ -15,7 +17,6 @@ export default function TabMenu({
       {options.map((option) => (
         <Pressable
           key={option}
-          onPress={() => setActiveTab(option)}
           className={`flex-1 h-10 py-2 px-4 rounded-xl ${
             activeTab === option ? "bg-blue-400" : ""
           }`}

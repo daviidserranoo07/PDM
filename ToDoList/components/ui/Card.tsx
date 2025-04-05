@@ -17,11 +17,12 @@ interface Task {
     address: string;
   };
   priority: string;
+  duration: number;
 }
 interface CardProps {
   task: Task;
-  onComplete: (id: string) => void;
-  onDelete: (id: string) => void;
+  onComplete: (task: Task) => void;
+  onDelete: (task: Task) => void;
 }
 
 export default function Card({ task, onComplete, onDelete }: CardProps) {
@@ -33,12 +34,17 @@ export default function Card({ task, onComplete, onDelete }: CardProps) {
         <Text className="text-2xl text-left w-full pl-4 font-bold">
           {task?.title}
         </Text>
-        <Text className="text-sm text-left w-full pl-4">
-          {task?.description}
-        </Text>
-        <Text className="text-sm text-left w-full pl-4">
-          {formatDate(task?.date)}
-        </Text>
+        {task?.description && (
+          <Text className="text-sm text-left w-full pl-4">
+            {task.description}
+          </Text>
+        )}
+        {task?.date && (
+          <Text className="text-sm text-left w-full pl-4">
+            {formatDate(task?.date)?.formatted}{" "}
+            {task?.duration ? `(${task?.duration} min)` : ""}
+          </Text>
+        )}
         <Text className="text-sm text-left w-full pl-4">
           {task?.location?.address || "Sin ubicación"}
         </Text>
@@ -48,7 +54,7 @@ export default function Card({ task, onComplete, onDelete }: CardProps) {
           <MaterialCommunityIcons
             onPress={() => {
               setIsCompleted(!isCompleted);
-              onComplete(task.id);
+              onComplete(task);
             }}
             name="check-circle"
             size={35}
@@ -58,7 +64,7 @@ export default function Card({ task, onComplete, onDelete }: CardProps) {
           <MaterialCommunityIcons
             onPress={() => {
               setIsCompleted(!isCompleted);
-              onComplete(task.id);
+              onComplete(task);
             }}
             name="check-circle"
             size={35}
@@ -66,7 +72,7 @@ export default function Card({ task, onComplete, onDelete }: CardProps) {
           />
         )}
         <MaterialCommunityIcons
-          onPress={() => onDelete(task.id)}
+          onPress={() => onDelete(task)}
           name="delete"
           size={35}
           color="red"

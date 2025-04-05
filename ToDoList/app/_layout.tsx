@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function RootLayout() {
   const insets = useSafeAreaInsets();
+
   return (
     <View className="flex-1">
       <Stack

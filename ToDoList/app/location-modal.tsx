@@ -4,56 +4,49 @@ import { router } from "expo-router";
 import * as Location from "expo-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import MapView, { Marker, MapPressEvent } from "react-native-maps";
-import { LocationObject, LocationObjectCoords } from "expo-location";
+import { LocationObjectCoords } from "expo-location";
+import useLocation from "@/hooks/useLocation";
 
 const { width, height } = Dimensions.get("window");
 
-interface Location {
-  coords: {
-    latitude: number;
-    longitude: number;
-  };
-  address: string;
-}
-
 export default function LocationModal() {
-  const [location, setLocation] = useState<LocationObject | null>(null);
   const [selectedLocation, setSelectedLocation] =
     useState<LocationObjectCoords | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [address, setAddress] = useState<string>("");
+  const { location, obtenerUbicacion, isLoading} = useLocation();
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("Permiso de ubicación denegado");
-        return;
+      if(!location && !isLoading){
+        await obtenerUbicacion();
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      setSelectedLocation(location.coords);
+      console.log("location 1", location);
+      if(location){
+        setSelectedLocation(location.coords);
 
-      // Obtener dirección
-      try {
-        const address = await Location.reverseGeocodeAsync({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
-        if (address[0]) {
-          setAddress(
-            `${address[0].street || ""} ${address[0].name || ""}, ${
-              address[0].city || ""
-            }`
-          );
+        //En base a la ubicación actual mediante las coordenadas obtenemos la dirección
+        try {
+          const address = await Location.reverseGeocodeAsync({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+          if (address[0]) {
+            setAddress(
+              `${address[0].street || ""} ${address[0].name || ""}, ${
+                address[0].city || ""
+              }`
+            );
+          }
+        } catch (error) {
+          console.log("Error getting address:", error);
         }
-      } catch (error) {
-        console.log("Error getting address:", error);
       }
     })();
-  }, []);
+  }, [location]);
 
+  //Función para seleccionar una posición en el mapa y guardar el estado
   const handleSelectLocation = async (event: MapPressEvent) => {
     const coords = event.nativeEvent.coordinate;
     setSelectedLocation({
@@ -78,7 +71,7 @@ export default function LocationModal() {
         }, ${address[0].city || ""}`;
         setAddress(addressStr);
 
-        // Navegar de vuelta con la ubicación seleccionada
+        // Navegar de vuelta a la página de creación con la ubicación seleccionada
         router.push({
           pathname: "/Create",
           params: {
@@ -145,6 +138,7 @@ export default function LocationModal() {
 
           <Pressable
             className="w-full p-4 bg-blue-500 rounded-xl"
+            disabled={!selectedLocation}
             onPress={() => {
               if (selectedLocation) {
                 router.push({

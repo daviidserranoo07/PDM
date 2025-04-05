@@ -13,7 +13,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { useNavigation } from "@react-navigation/native";
 import * as Crypto from "expo-crypto";
 
 interface Task {
@@ -24,6 +23,7 @@ interface Task {
   date: Date;
   location: Location;
   priority: string;
+  duration: number;
 }
 
 interface Location {
@@ -40,17 +40,19 @@ export default function CreateTask() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [location, setLocation] = useState<Location | null>(
     params.location ? JSON.parse(params.location as string) : null
   );
-  const [priority, setPriority] = useState("Normal"); // 'normal' o 'urgent'
-
+  const [priority, setPriority] = useState("Normal");
+  const [duration, setDuration] = useState("");
   const handleSubmit = async () => {
     try {
       const newTask: Task = {
         id: Crypto.randomUUID(),
         title,
         description,
+        duration: parseInt(duration),
         location: location || {
           coords: {
             latitude: 0,
@@ -63,38 +65,52 @@ export default function CreateTask() {
         date: date,
       };
 
-      // Obtener tareas existentes
+      //Obtenemos las tareas ya existentes del async storage
       const existingTasks = await AsyncStorage.getItem("tasks");
       const tasks = existingTasks ? JSON.parse(existingTasks) : [];
 
-      // Añadir nueva tarea
+      //Añadimos la nueva tarea a las existentes
       const updatedTasks = [...tasks, newTask];
 
-      // Guardar en AsyncStorage
+      //Guardamos tareas en AsyncStorage
       await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
 
-      // Limpiar formulario y volver atrás
+      //Limpiamos el formulario
       setTitle("");
       setDescription("");
       setLocation(null);
       setPriority("Normal");
 
+      //Volvemos a la pantalla anterior
       router.back();
     } catch (error) {
       console.error("Error saving task:", error);
-      // Aquí podrías mostrar un mensaje de error al usuario
     }
   };
 
-  // Validación antes de guardar
+  // Validamos que la tarea tenga un título
   const isFormValid = () => {
-    return title.trim() !== "" && description.trim() !== "";
+    return title.trim() !== "";
   };
 
-  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+  //Función para seleccionar la fecha del evento
+  const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
-    if (date) {
-      setDate(date);
+    if (selectedDate) {
+      // Mantener la hora actual al cambiar la fecha
+      const newDate = new Date(selectedDate);
+      newDate.setHours(date.getHours(), date.getMinutes());
+      setDate(newDate);
+    }
+  };
+
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(false);
+    if (selectedTime) {
+      // Mantener la fecha actual al cambiar la hora
+      const newDate = new Date(date);
+      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+      setDate(newDate);
     }
   };
 
@@ -126,21 +142,63 @@ export default function CreateTask() {
           />
         </View>
 
-        {/* Fecha */}
+        {/* Duración */}
         <View className="gap-2">
-          <Text className="text-lg font-medium text-gray-700">Fecha</Text>
-          <Pressable
-            onPress={() => setShowDatePicker(true)}
+          <Text className="text-lg font-medium text-gray-700">Duración</Text>
+          <TextInput
+            value={duration}
+            onChangeText={setDuration}
+            keyboardType="numeric"
+            placeholder="Duración de la tarea"
             className="w-full p-3 border border-gray-300 rounded-xl"
-          >
-            <Text className="text-gray-700">{date.toLocaleDateString()}</Text>
-          </Pressable>
+            textAlignVertical="top"
+          />
+        </View>
 
+        {/* Fecha y hora */}
+        <View className="gap-2">
+          <Text className="text-lg font-medium text-gray-700">
+            Fecha y hora
+          </Text>
+          <View className="flex-row gap-2">
+            {/* Selector de Fecha */}
+            <Pressable
+              onPress={() => setShowDatePicker(true)}
+              className="flex-1 p-3 border border-gray-300 rounded-xl"
+            >
+              <Text className="text-gray-700">{date.toLocaleDateString()}</Text>
+            </Pressable>
+
+            {/* Selector de Hora */}
+            <Pressable
+              onPress={() => setShowTimePicker(true)}
+              className="flex-1 p-3 border border-gray-300 rounded-xl"
+            >
+              <Text className="text-gray-700">
+                {date.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* DatePicker para Fecha */}
           {showDatePicker && (
             <DateTimePicker
               value={date}
               mode="date"
               onChange={handleDateChange}
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+            />
+          )}
+
+          {/* DatePicker para Hora */}
+          {showTimePicker && (
+            <DateTimePicker
+              value={date}
+              mode="time"
+              onChange={handleTimeChange}
               display={Platform.OS === "ios" ? "spinner" : "default"}
             />
           )}
