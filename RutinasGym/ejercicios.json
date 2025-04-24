@@ -1,0 +1,46 @@
+[
+    {
+      "id": 1,
+      "name": "Press de Banca",
+      "description": "4 series de 12 repeticiones con 60kg",
+      "duration": 15,
+      "order": 1,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 2,
+      "name": "Sentadillas",
+      "description": "4 series de 10 repeticiones con 80kg",
+      "duration": 20,
+      "order": 2,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 3,
+      "name": "Peso Muerto",
+      "description": "3 series de 8 repeticiones con 100kg",
+      "duration": 15,
+      "order": 3,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 4,
+      "name": "Press Militar",
+      "description": "4 series de 10 repeticiones con 40kg",
+      "duration": 12,
+      "order": 4,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    }
+  ]

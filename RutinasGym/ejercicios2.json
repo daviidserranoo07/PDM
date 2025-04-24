@@ -1,0 +1,90 @@
+[
+    {
+      "id": 1,
+      "name": "Press de Banca",
+      "description": "4 series: 12,10,8,8 reps. Calentar con barra, luego 60kg-70kg-80kg",
+      "duration": 15,
+      "order": 1,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 2,
+      "name": "Aperturas con Mancuernas",
+      "description": "3 series de 12 repeticiones con 20kg cada mancuerna",
+      "duration": 12,
+      "order": 2,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 3,
+      "name": "Press Inclinado Smith",
+      "description": "4 series de 10 repeticiones. Aumentar peso progresivamente: 50kg-60kg-70kg-70kg",
+      "duration": 15,
+      "order": 3,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 4,
+      "name": "Fondos en Paralelas",
+      "description": "3 series al fallo. Añadir peso si es necesario",
+      "duration": 10,
+      "order": 4,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 5,
+      "name": "Press Militar con Mancuernas",
+      "description": "4 series de 12 repeticiones. 15kg cada mancuerna",
+      "duration": 12,
+      "order": 5,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 6,
+      "name": "Elevaciones Laterales",
+      "description": "3 series de 15 repeticiones. 10kg cada mancuerna",
+      "duration": 10,
+      "order": 6,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 7,
+      "name": "Extensiones de Tríceps en Polea",
+      "description": "4 series de 12 repeticiones. Aumentar peso cada serie: 25kg-30kg-35kg-35kg",
+      "duration": 12,
+      "order": 7,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    },
+    {
+      "id": 8,
+      "name": "Curl de Bíceps con Barra",
+      "description": "4 series de 10 repeticiones. Mantener técnica estricta. 30kg",
+      "duration": 12,
+      "order": 8,
+      "start": false,
+      "finish": false,
+      "paused": false,
+      "elapsedTime": 0
+    }
+  ]

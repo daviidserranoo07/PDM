@@ -26,17 +26,17 @@ export const CardExercise = ({
     const [doingExercise, setDoingExercise] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const intervalRef = useRef<NodeJS.Timeout>();
-    // Estado local para el botón deshabilitado
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
 
-    // Mover la verificación fuera del render
+    // Función para comprobar que el ejercicio anterior ha sido completado
     const isPreviousExerciseCompleted = (): boolean => {
         if (exercise.order === 1) return true;
         const previousExercise = exercises.find(ex => ex.order === exercise.order - 1);
         return previousExercise?.finish || false;
     };
 
+    //Actualizo el estado del array de ejercicios
     const updateGlobalExercise = useCallback((updatedExercise: Partial<Exercise>) => {
         setExercises(prevExercises => 
             prevExercises.map(ex => 
@@ -47,6 +47,7 @@ export const CardExercise = ({
         );
     }, [currentExercise.id, setExercises]);
 
+    //Función para empezar un ejercicio
     const handleStart = () => {
         try {
             if (!isPreviousExerciseCompleted()) {
@@ -72,6 +73,7 @@ export const CardExercise = ({
         }
     };
 
+    //Función para pausar un ejercicio
     const handlePause = () => {
         try {
             const updates = {
@@ -89,6 +91,7 @@ export const CardExercise = ({
         }
     };
 
+    // Función para finalizar un ejercicio
     const handleFinish = () => {
         try {
             const updates = {
@@ -108,7 +111,7 @@ export const CardExercise = ({
         }
     };
 
-    // Inicialización del ejercicio
+    // Inicializamos los estados con el ejercicoo que hemos recibido por props
     useEffect(() => {
         if (currentExercise) {
             setExercise(currentExercise);
@@ -117,7 +120,7 @@ export const CardExercise = ({
         }
     }, [currentExercise]);
 
-    // Temporizador
+    // Temporizador del ejercicio
     useEffect(() => {
         if (exercise.start && !exercise.finish && doingExercise) {
             intervalRef.current = setInterval(() => {
@@ -146,9 +149,9 @@ export const CardExercise = ({
     }, [exercise.start, exercises]);
 
     return (
-        <View className="bg-white p-4 shadow-xl m-2 w-full rounded-lg">
+        <View className="bg-white gap-4 p-4 shadow-xl m-2 w-full rounded-lg">
             {/* Encabezado */}
-            <View className="flex-row justify-between items-center mb-4">
+            <View className="flex-col justify-between gap-4 items-center mb-4 max-w-full">
                 <View className="flex flex-col gap-2">
                     <Text className="text-xl font-bold text-gray-800">{exercise.name}</Text>
                     <Text className="text-gray-600">{exercise.description}</Text>
@@ -165,9 +168,9 @@ export const CardExercise = ({
                             ? '✓ Terminado'
                             : exercise.start
                                 ? exercise.paused
-                                    ? '⏸ Pausado'
-                                    : '⏵ En progreso'
-                                : '⏺ Sin empezar'}
+                                    ? 'Pausado'
+                                    : 'En progreso'
+                                : 'Sin empezar'}
                     </Text>
                 </View>
             </View>
