@@ -22,82 +22,82 @@ export default function Index() {
   const [totalElapsedTime, setTotalElapsedTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout>();
 
-// Función principal para importar ejercicios
-const handleImportExercises = async () => {
-  try {
-      // Seleccionar archivo que quiero importar en la aplicación
-      const result = await DocumentPicker.getDocumentAsync({
-          type: 'application/json',
-          copyToCacheDirectory: true
-      });
+  // Función principal para importar ejercicios
+  const handleImportExercises = async () => {
+    try {
+        // Seleccionar archivo que quiero importar en la aplicación
+        const result = await DocumentPicker.getDocumentAsync({
+            type: 'application/json',
+            copyToCacheDirectory: true
+        });
 
-      // Verificar que se seleccionó un archivo al menos para importar
-      if (!result.assets || !result.assets[0]) {
-          Alert.alert('Error', 'No se seleccionó ningún archivo');
-          return;
-      }
+        // Verificar que se seleccionó un archivo al menos para importar
+        if (!result.assets || !result.assets[0]) {
+            Alert.alert('Error', 'No se seleccionó ningún archivo');
+            return;
+        }
 
-      // Leer la información del archivo
-      const fileUri = result.assets[0].uri;
-      const fileContent = await FileSystem.readAsStringAsync(fileUri);
+        // Leer la información del archivo
+        const fileUri = result.assets[0].uri;
+        const fileContent = await FileSystem.readAsStringAsync(fileUri);
 
-      // Parsear el archivo a JSON
-      let exercises;
-      try {
-          exercises = JSON.parse(fileContent);
-      } catch (error) {
-          Alert.alert('Error', 'El archivo no contiene un JSON válido');
-          return;
-      }
+        // Parsear el archivo a JSON
+        let exercises;
+        try {
+            exercises = JSON.parse(fileContent);
+        } catch (error) {
+            Alert.alert('Error', 'El archivo no contiene un JSON válido');
+            return;
+        }
 
-      // Compruebo que el JSON tenga un array
-      if (!Array.isArray(exercises)) {
-          Alert.alert('Error', 'El archivo debe contener un array de ejercicios');
-          return;
-      }
+        // Compruebo que el JSON tenga un array
+        if (!Array.isArray(exercises)) {
+            Alert.alert('Error', 'El archivo debe contener un array de ejercicios');
+            return;
+        }
 
-      // Ordeno los ejecicios por prioridad según su order
-      const orderedExercises = [...exercises].sort((a, b) => a.order - b.order);
+        // Ordeno los ejecicios por prioridad según su order
+        const orderedExercises = [...exercises].sort((a, b) => a.order - b.order);
 
-      // Confirmo que la importación ha sido correcta
-      Alert.alert(
-          'Confirmar importación',
-          `¿Deseas importar ${exercises.length} ejercicios? Esto reemplazará los ejercicios existentes.`,
-          [
-              {
-                  text: 'Cancelar',
-                  style: 'cancel'
-              },
-              {
-                  text: 'Importar',
-                  onPress: async () => {
-                      try {
-                          // 10. Guardar en AsyncStorage
-                          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orderedExercises));
-                          
-                          // 11. Actualizar estado
-                          setExercises(orderedExercises);
-                          
-                          Alert.alert(
-                              'Éxito', 
-                              `Se importaron ${exercises.length} ejercicios correctamente`
-                          );
-                      } catch (error) {
-                          Alert.alert('Error', 'No se pudieron guardar los ejercicios');
-                      }
-                  }
-              }
-          ]
-      );
+        // Confirmo que la importación ha sido correcta
+        Alert.alert(
+            'Confirmar importación',
+            `¿Deseas importar ${exercises.length} ejercicios? Esto reemplazará los ejercicios existentes.`,
+            [
+                {
+                    text: 'Cancelar',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Importar',
+                    onPress: async () => {
+                        try {
+                          //Guardamos los ejercicios importados en el async storage
+                            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(orderedExercises));
+                            
+                            setExercises(orderedExercises);
+                            
+                            //Avisamos al usuario de que la importación se realizo correctamente
+                            Alert.alert(
+                                'Éxito', 
+                                `Se importaron ${exercises.length} ejercicios correctamente`
+                            );
+                        } catch (error) {
+                            Alert.alert('Error', 'No se pudieron guardar los ejercicios');
+                        }
+                    }
+                }
+            ]
+        );
 
-  } catch (error) {
-      console.error('Error importing exercises:', error);
-      Alert.alert(
-          'Error', 
-          'Ocurrió un error al importar los ejercicios'
-      );
-  }
-};
+    } catch (error) {
+        console.error('Error importing exercises:', error);
+        Alert.alert(
+            'Error', 
+            'Ocurrió un error al importar los ejercicios'
+        );
+    }
+  };
 
   // Cargar ejercicios del async storage 
   const loadExercises = async () => {
@@ -158,7 +158,7 @@ const handleImportExercises = async () => {
             );
         }
         
-        // Limpiar el archivo temporal que habua creado
+        // Limpiar el archivo temporal que habia creado
         await FileSystem.deleteAsync(fileUri, { idempotent: true });
         
     } catch (error) {
