@@ -1,8 +1,9 @@
 import { CategoryContext } from '@/context/CategoryContext';
 import { Categoria } from '@/models/Categoria';
+import { Movimiento } from '@/models/Movimiento';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FormularioCategoria from './FormularioCategoria';
 
@@ -11,16 +12,21 @@ export default function FormularioMovimiento({
     handleGasto,
     tipoTransaccion,
     modalVisible,
-    setModalVisible
+    setModalVisible,
+    movimiento,
+    handleDeleteMovimiento
 }: {
     handleIngreso: Function,
     handleGasto: Function,
     tipoTransaccion: string,
     modalVisible: boolean,
-    setModalVisible: Function
+    setModalVisible: Function,
+    movimiento: Movimiento,
+    handleDeleteMovimiento: Function
 }) {
     const [cantidad, setCantidad] = useState('');
     const [concepto, setConcepto] = useState('');
+    const [descripcion, setDescripcion] = useState('');
     const [fecha, setFecha] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const { categorias } = useContext(CategoryContext) as {
@@ -36,17 +42,45 @@ export default function FormularioMovimiento({
         if (isNaN(cantidadNum)) return;
 
         if (tipoTransaccion === 'ingreso') {
-            await handleIngreso(cantidadNum, concepto, fecha, categoriaSeleccionada || '');
+            await handleIngreso(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, movimiento);
         } else {
-            await handleGasto(cantidadNum, concepto, fecha, categoriaSeleccionada || '');
+            await handleGasto(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, movimiento);
         }
 
+        //Limpiamos el formulario
         setCantidad('');
         setConcepto('');
+        setDescripcion('');
         setCategoriaSeleccionada(null);
         setFecha(new Date());
         setModalVisible(false);
     };
+
+    const handleDelete = async () => {
+        try {
+            await handleDeleteMovimiento(movimiento);
+
+            //Limpiamos el formulario
+            setCantidad('');
+            setConcepto('');
+            setDescripcion('');
+            setCategoriaSeleccionada(null);
+            setFecha(new Date());
+            setModalVisible(false);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    useEffect(() => {
+        if (movimiento) {
+            setCantidad(movimiento.cantidad.toString());
+            setConcepto(movimiento.concepto);
+            setDescripcion(movimiento.descripcion);
+            setCategoriaSeleccionada(movimiento.categoria);
+            setFecha(new Date(movimiento.fecha));
+        }
+    }, [movimiento])
 
     return (
         <>
@@ -63,22 +97,38 @@ export default function FormularioMovimiento({
                                 {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
                             </Text>
 
-                            <TextInput
-                                className="border border-gray-300 w-full rounded-lg px-3 py-2 mb-4"
-                                placeholder="Concepto (opcional)"
-                                value={concepto}
-                                onChangeText={setConcepto}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db' }}
-                            />
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">Concepto</Text>
+                                <TextInput
+                                    className="border border-gray-300 w-full rounded-lg px-3 py-2"
+                                    placeholder="Concepto (opcional)"
+                                    value={concepto}
+                                    onChangeText={setConcepto}
+                                />
+                            </View>
 
-                            <TextInput
-                                className="border border-gray-300 w-full rounded-lg px-3 py-2 mb-4"
-                                placeholder="Cantidad (obligatoria)"
-                                value={cantidad}
-                                keyboardType='numeric'
-                                onChangeText={setCantidad}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db' }}
-                            />
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">
+                                    Cantidad <Text className="text-red-500">*</Text>
+                                </Text>
+                                <TextInput
+                                    className="border border-gray-300 w-full rounded-lg px-3 py-2"
+                                    placeholder="Cantidad"
+                                    value={cantidad}
+                                    keyboardType='numeric'
+                                    onChangeText={setCantidad}
+                                />
+                            </View>
+
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">Descripción</Text>
+                                <TextInput
+                                    className="border border-gray-300 w-full rounded-lg px-3 py-2"
+                                    placeholder="Descripción (opcional)"
+                                    value={descripcion}
+                                    onChangeText={setDescripcion}
+                                />
+                            </View>
 
                             <View className="flex-row items-center mb-4">
                                 <View className="flex-1 border border-gray-300 rounded-lg overflow-hidden">
@@ -99,14 +149,12 @@ export default function FormularioMovimiento({
                                         <Picker.Item
                                             label="Selecciona una categoría"
                                             value={null}
-                                            className="text-black"
                                         />
                                         {categorias.map(c => (
                                             <Picker.Item
                                                 key={c.id}
                                                 label={c.nombre}
                                                 value={c.id}
-                                                className="text-black"
                                             />
                                         ))}
                                     </Picker>
@@ -133,7 +181,6 @@ export default function FormularioMovimiento({
                             <TouchableOpacity
                                 className="border border-gray-300 rounded-lg px-3 py-2 mb-4"
                                 onPress={() => setShowDatePicker(true)}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db' }}
                             >
                                 <Text>{fecha.toLocaleDateString()}</Text>
                             </TouchableOpacity>
@@ -157,6 +204,13 @@ export default function FormularioMovimiento({
                                 >
                                     <Text className="text-white text-base">Cancelar</Text>
                                 </TouchableOpacity>
+
+                                {movimiento ? <TouchableOpacity
+                                    className="bg-red-500 px-5 py-2 rounded-lg"
+                                    onPress={handleDelete}
+                                >
+                                    <Text className="text-white text-base">Eliminar</Text>
+                                </TouchableOpacity> : null}
 
                                 <TouchableOpacity
                                     className="bg-green-600 px-5 py-2 rounded-lg"

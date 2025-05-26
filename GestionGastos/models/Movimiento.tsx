@@ -4,6 +4,7 @@ export interface Movimiento {
     id: string;
     concepto: string;
     cantidad: number;
+    descripcion: string;
     fecha: string;
     categoria: Categoria
 }
