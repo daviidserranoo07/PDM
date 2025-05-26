@@ -128,7 +128,7 @@ export default function FormularioCategoria({ modalVisible, setModalVisible, id 
                                 className="bg-green-600 px-5 py-2 rounded-lg"
                                 onPress={handleSubmit}
                             >
-                                <Text className="text-white text-base">Guardar</Text>
+                                <Text className="text-white text-base p-2">Guardar</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
