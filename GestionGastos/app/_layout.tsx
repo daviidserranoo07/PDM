@@ -1,19 +1,31 @@
 import { CategoryProvider } from "@/context/CategoryProvider";
-import { Stack } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from "expo-router";
 import '../global.css';
 
 export default function RootLayout() {
   return (
     <CategoryProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen
+      <Tabs screenOptions={{ headerShown: false }}>
+        <Tabs.Screen
           name="index"
           options={{
-            headerShown: false,
-            title: "Mi Título Personalizado"
+            title: "Inicio",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
           }}
         />
-      </Stack>
+        <Tabs.Screen
+          name="categorias"
+          options={{
+            title: "Categorías",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="list" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
     </CategoryProvider>
   );
 }

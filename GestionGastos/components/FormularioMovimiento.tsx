@@ -1,9 +1,10 @@
 import { CategoryContext } from '@/context/CategoryContext';
-import { Categoria } from '@/models/Categoria';
+import { Categoria, Subcategoria } from '@/models/Categoria';
+import { Movimiento } from '@/models/Movimiento';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import React, { useContext, useState } from "react";
-import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useContext, useEffect, useState } from 'react';
+import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FormularioCategoria from './FormularioCategoria';
 
 export default function FormularioMovimiento({
@@ -11,42 +12,112 @@ export default function FormularioMovimiento({
     handleGasto,
     tipoTransaccion,
     modalVisible,
-    setModalVisible
+    setModalVisible,
+    movimiento,
+    handleDeleteMovimiento
 }: {
     handleIngreso: Function,
     handleGasto: Function,
     tipoTransaccion: string,
     modalVisible: boolean,
-    setModalVisible: Function
+    setModalVisible: Function,
+    movimiento: Movimiento,
+    handleDeleteMovimiento: Function,
 }) {
     const [cantidad, setCantidad] = useState('');
     const [concepto, setConcepto] = useState('');
+    const [descripcion, setDescripcion] = useState('');
     const [fecha, setFecha] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const { categorias } = useContext(CategoryContext) as {
+    const { categorias, handleUpdateCategoria } = useContext(CategoryContext) as {
         categorias: Categoria[];
         handleAddCategoria: Function;
+        handleUpdateCategoria: Function;
     };
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<Categoria | null>(null);
+    const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<Subcategoria | null>(null);
     const [showAddCategory, setShowAddCategory] = useState(false);
+    const [showAddSubcategory, setShowAddSubcategory] = useState(false);
+    const [nuevaSubcategoria, setNuevaSubcategoria] = useState('');
 
     const handleSubmit = async () => {
-        if (!cantidad) return;
+        if (!cantidad) {
+            Alert.alert(
+                "No valido",
+                "Por favor, introduzca una cantidad",
+                [{ text: "OK" }]
+            );
+            return;
+        }
         const cantidadNum = parseFloat(cantidad);
-        if (isNaN(cantidadNum)) return;
-
-        if (tipoTransaccion === 'ingreso') {
-            await handleIngreso(cantidadNum, concepto, fecha, categoriaSeleccionada || '');
-        } else {
-            await handleGasto(cantidadNum, concepto, fecha, categoriaSeleccionada || '');
+        if (isNaN(cantidadNum)) {
+            Alert.alert(
+                "No valido",
+                "La cantidad debe ser un número válido",
+                [{ text: "OK" }]
+            );
+            return;
         }
 
+        if (tipoTransaccion === 'ingreso') {
+            await handleIngreso(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimiento);
+        } else {
+            await handleGasto(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimiento);
+        }
+
+        //Limpiamos el formulario
         setCantidad('');
         setConcepto('');
         setCategoriaSeleccionada(null);
+        setSubcategoriaSeleccionada(null);
         setFecha(new Date());
         setModalVisible(false);
     };
+
+    const handleAddSubcategoria = async () => {
+        if (!nuevaSubcategoria || !categoriaSeleccionada) return;
+
+        const subcategoria: Subcategoria = {
+            id: Date.now().toString(),
+            nombre: nuevaSubcategoria
+        };
+
+        const categoriaActualizada = {
+            ...categoriaSeleccionada,
+            subcategorias: [...(categoriaSeleccionada.subcategorias || []), subcategoria]
+        };
+
+        await handleUpdateCategoria(categoriaActualizada);
+        setCategoriaSeleccionada(categoriaActualizada);
+        setNuevaSubcategoria('');
+        setShowAddSubcategory(false);
+    };
+
+    const handleDelete = async () => {
+        try {
+            await handleDeleteMovimiento(movimiento);
+
+            //Limpiamos el formulario
+            setCantidad('');
+            setConcepto('');
+            setCategoriaSeleccionada(null);
+            setSubcategoriaSeleccionada(null);
+            setFecha(new Date());
+            setModalVisible(false);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    useEffect(() => {
+        if (movimiento) {
+            setCantidad(movimiento.cantidad.toString());
+            setConcepto(movimiento.concepto);
+            setFecha(new Date(movimiento.fecha));
+            setCategoriaSeleccionada(movimiento.categoria);
+            setSubcategoriaSeleccionada(movimiento.subcategoria);
+        }
+    }, [movimiento])
 
     return (
         <>
@@ -63,80 +134,176 @@ export default function FormularioMovimiento({
                                 {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
                             </Text>
 
-                            <TextInput
-                                className="border border-gray-300 w-full rounded-lg px-3 py-2 mb-4"
-                                placeholder="Concepto (opcional)"
-                                value={concepto}
-                                onChangeText={setConcepto}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db' }}
-                            />
-
-                            <TextInput
-                                className="border border-gray-300 w-full rounded-lg px-3 py-2 mb-4"
-                                placeholder="Cantidad (obligatoria)"
-                                value={cantidad}
-                                keyboardType='numeric'
-                                onChangeText={setCantidad}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db' }}
-                            />
-
-                            <View className="flex-row items-center mb-4">
-                                <View className="flex-1 border border-gray-300 rounded-lg overflow-hidden">
-                                    <Picker
-                                        selectedValue={categoriaSeleccionada?.id}
-                                        onValueChange={(itemValue) => {
-                                            if (!itemValue) {
-                                                setCategoriaSeleccionada(null);
-                                                return;
-                                            }
-                                            const categoria = categorias.find(c => c.id === itemValue);
-                                            if (categoria) {
-                                                setCategoriaSeleccionada(categoria);
-                                            }
-                                        }}
-                                        className="h-12 w-full bg-transparent"
-                                    >
-                                        <Picker.Item
-                                            label="Selecciona una categoría"
-                                            value={null}
-                                            className="text-black"
-                                        />
-                                        {categorias.map(c => (
-                                            <Picker.Item
-                                                key={c.id}
-                                                label={c.nombre}
-                                                value={c.id}
-                                                className="text-black"
-                                            />
-                                        ))}
-                                    </Picker>
-                                </View>
-
-                                <TouchableOpacity
-                                    className="ml-2 bg-blue-600 rounded-full w-10 h-10 justify-center items-center"
-                                    onPress={() => {
-                                        console.log("Estado actual:", showAddCategory);
-                                        setShowAddCategory(true);
-                                        console.log("Nuevo estado:", true);
-                                    }}
-                                >
-                                    <Text className="text-white text-xl">+</Text>
-                                </TouchableOpacity>
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">
+                                    Concepto
+                                </Text>
+                                <TextInput
+                                    className="border border-gray-300 w-full rounded-lg px-3 py-2"
+                                    placeholder="Concepto"
+                                    value={concepto}
+                                    onChangeText={setConcepto}
+                                />
                             </View>
 
-                            <FormularioCategoria
-                                modalVisible={showAddCategory}
-                                setModalVisible={setShowAddCategory}
-                                id={''}
-                            />
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">
+                                    Cantidad <Text className="text-red-500">*</Text>
+                                </Text>
+                                <TextInput
+                                    className="border border-gray-300 w-full rounded-lg px-3 py-2"
+                                    placeholder="Cantidad"
+                                    value={cantidad}
+                                    keyboardType='numeric'
+                                    onChangeText={setCantidad}
+                                />
+                            </View>
 
-                            <TouchableOpacity
-                                className="border border-gray-300 rounded-lg px-3 py-2 mb-4"
-                                onPress={() => setShowDatePicker(true)}
-                                style={{ borderWidth: 1, borderColor: '#d1d5db' }}
-                            >
-                                <Text>{fecha.toLocaleDateString()}</Text>
-                            </TouchableOpacity>
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">
+                                    Descripción
+                                </Text>
+                                <TextInput
+                                    className="border border-gray-300 w-full rounded-lg px-3 py-2 mb-4"
+                                    placeholder="Descripción (opcional)"
+                                    value={descripcion}
+                                    onChangeText={setDescripcion}
+                                />
+                            </View>
+
+                            <View className="mb-4">
+                                <View className="flex-row justify-between items-center mb-2">
+                                    <Text className="text-gray-600 mb-1">
+                                        Categoría
+                                    </Text>
+                                    <TouchableOpacity
+                                        className="bg-blue-500 px-3 py-1 rounded"
+                                        onPress={() => setShowAddCategory(true)}
+                                    >
+                                        <Text className="text-white">Añadir categoria</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View className="flex-row items-center">
+                                    <View className="flex-1 border border-gray-300 rounded-lg overflow-hidden">
+                                        <Picker
+                                            selectedValue={categoriaSeleccionada?.id}
+                                            onValueChange={(itemValue) => {
+                                                if (!itemValue) {
+                                                    setCategoriaSeleccionada(null);
+                                                    setSubcategoriaSeleccionada(null);
+                                                    return;
+                                                }
+                                                const categoria = categorias.find(c => c.id === itemValue);
+                                                if (categoria) {
+                                                    setCategoriaSeleccionada(categoria);
+                                                    setSubcategoriaSeleccionada(null);
+                                                }
+                                            }}
+                                            className="h-12 w-full bg-transparent"
+                                        >
+                                            <Picker.Item
+                                                label="Selecciona una categoría"
+                                                value={null}
+                                            />
+                                            {categorias.map(c => (
+                                                <Picker.Item
+                                                    key={c?.id}
+                                                    label={c?.nombre}
+                                                    value={c.id}
+                                                />
+                                            ))}
+                                        </Picker>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {categoriaSeleccionada && (
+                                <View className="mb-4">
+                                    <View className="flex-row justify-between items-center mb-2">
+                                        <Text className="text-gray-600">Subcategorías</Text>
+                                        <TouchableOpacity
+                                            className="bg-blue-500 px-3 py-1 rounded"
+                                            onPress={() => setShowAddSubcategory(true)}
+                                        >
+                                            <Text className="text-white">Añadir subcategoría</Text>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    {categoriaSeleccionada.subcategorias && categoriaSeleccionada.subcategorias.length > 0 && (
+                                        <View className="border border-gray-300 rounded-lg overflow-hidden mb-2">
+                                            <Picker
+                                                selectedValue={subcategoriaSeleccionada?.id}
+                                                onValueChange={(itemValue) => {
+                                                    if (!itemValue) {
+                                                        setSubcategoriaSeleccionada(null);
+                                                        return;
+                                                    }
+                                                    const subcategoria = categoriaSeleccionada.subcategorias?.find(
+                                                        s => s.id === itemValue
+                                                    );
+                                                    if (subcategoria) {
+                                                        setSubcategoriaSeleccionada(subcategoria);
+                                                    }
+                                                }}
+                                                className="h-12 w-full bg-transparent"
+                                            >
+                                                <Picker.Item
+                                                    label="Selecciona una subcategoría"
+                                                    value={null}
+                                                />
+                                                {categoriaSeleccionada.subcategorias.map(sub => (
+                                                    <Picker.Item
+                                                        key={sub.id}
+                                                        label={sub.nombre}
+                                                        value={sub.id}
+                                                    />
+                                                ))}
+                                            </Picker>
+                                        </View>
+                                    )}
+
+                                    {showAddSubcategory && (
+                                        <View className="bg-gray-100 p-4 rounded-lg">
+                                            <TextInput
+                                                className="border border-gray-300 rounded-lg px-3 py-2 mb-2"
+                                                placeholder="Nombre de la subcategoría"
+                                                value={nuevaSubcategoria}
+                                                onChangeText={setNuevaSubcategoria}
+                                            />
+                                            <View className="flex-row justify-end gap-2">
+                                                <TouchableOpacity
+                                                    className="bg-gray-400 px-3 py-1 rounded"
+                                                    onPress={() => {
+                                                        setShowAddSubcategory(false);
+                                                        setNuevaSubcategoria('');
+                                                    }}
+                                                >
+                                                    <Text className="text-white">Cancelar</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    className="bg-green-500 px-3 py-1 rounded"
+                                                    onPress={handleAddSubcategoria}
+                                                >
+                                                    <Text className="text-white">Guardar</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">
+                                    Fecha <Text className="text-red-500">*</Text>
+                                </Text>
+                                <TouchableOpacity
+                                    className="border border-gray-300 rounded-lg px-3 py-2"
+                                    onPress={() => setShowDatePicker(true)}
+                                    style={{ borderWidth: 1, borderColor: '#d1d5db' }}
+                                >
+                                    <Text>{fecha.toLocaleDateString()}</Text>
+                                </TouchableOpacity>
+                            </View>
 
                             {showDatePicker && (
                                 <DateTimePicker
@@ -158,6 +325,14 @@ export default function FormularioMovimiento({
                                     <Text className="text-white text-base">Cancelar</Text>
                                 </TouchableOpacity>
 
+
+                                {movimiento ? <TouchableOpacity
+                                    className="bg-red-500 px-5 py-2 rounded-lg"
+                                    onPress={handleDelete}
+                                >
+                                    <Text className="text-white text-base">Eliminar</Text>
+                                </TouchableOpacity> : null}
+
                                 <TouchableOpacity
                                     className="bg-green-600 px-5 py-2 rounded-lg"
                                     onPress={handleSubmit}
@@ -169,6 +344,12 @@ export default function FormularioMovimiento({
                     </View>
                 </View>
             </Modal>
+
+            <FormularioCategoria
+                modalVisible={showAddCategory}
+                setModalVisible={setShowAddCategory}
+                id={''}
+            />
         </>
     );
 }

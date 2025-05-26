@@ -8,6 +8,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
 
     const handleLoadCategorias = async () => {
         try {
+            await AsyncStorage.clear();
             const data = await AsyncStorage.getItem('categorias');
             if (data) {
                 const categoriasActuales = await JSON.parse(data);
@@ -66,11 +67,9 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
             const data = await AsyncStorage.getItem('categorias');
             if (data) {
                 const categoriasActuales = await JSON.parse(data);
-                const nuevasCategoria = categoriasActuales.map((categoria: Categoria) => {
-                    if (categoria.id !== categoriaEliminada.id) {
-                        return categoria;
-                    }
-                });
+                const nuevasCategoria = categoriasActuales
+                    .filter((categoria: Categoria) => categoria && categoria.id !== categoriaEliminada.id)
+                    .filter(Boolean); // Elimina cualquier elemento null o undefined que pudiera quedar
                 await AsyncStorage.setItem('categorias', JSON.stringify(nuevasCategoria));
                 setCategorias(nuevasCategoria);
             }
