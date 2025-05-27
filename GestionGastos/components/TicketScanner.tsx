@@ -157,19 +157,6 @@ export default function TicketScanner({ onTicketProcessed }: { onTicketProcessed
         }
         total = maxTotal;
 
-        if (total === 0) {
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                const priceMatch = line.match(/(\d+[.,]\d{2})€?/);
-                if (priceMatch) {
-                    const price = parseFloat(priceMatch[1].replace(',', '.'));
-                    if (price > total) {
-                        total = price;
-                    }
-                }
-            }
-        }
-
         // Buscamos el nombre de la tienda en las primeras primeras líneas
         for (let i = 0; i < Math.min(5, lines.length); i++) {
             const line = lines[i].trim();

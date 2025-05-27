@@ -1,11 +1,16 @@
 import RegistroMovimiento from '@/components/RegistroMovimiento';
 import { Categoria, Subcategoria } from '@/models/Categoria';
 import { Movimiento } from '@/models/Movimiento';
+import { getPrimerDiaMes, getUltimoDiaMes } from '@/utils/fechas';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from "react";
+import { Picker } from '@react-native-picker/picker';
+import { useContext, useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import FormularioMovimiento from '../components/FormularioMovimiento';
+import { CategoryContext } from "../context/CategoryContext";
+
+
 
 export default function Index() {
   const [gastos, setGastos] = useState<number>(0);
@@ -19,6 +24,9 @@ export default function Index() {
   const [tipoTransaccion, setTipoTransaccion] = useState<'ingreso' | 'gasto'>('ingreso');
   const [currentTipo, setCurrentTipo] = useState<'ingreso' | 'gasto' | 'all'>('all');
   const [movimiento, setMovimiento] = useState<Movimiento | null>(null);
+  const { categorias } = useContext(CategoryContext) as { categorias: Categoria[] };
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
+  const [subcategoriaFiltro, setSubcategoriaFiltro] = useState<string>('');
 
   const cargarDatos = async () => {
     try {
@@ -139,15 +147,6 @@ export default function Index() {
     }
   }
 
-
-  const getPrimerDiaMes = (fecha: Date) => {
-    return new Date(fecha.getFullYear(), fecha.getMonth(), 1);
-  };
-
-  const getUltimoDiaMes = (fecha: Date) => {
-    return new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0);
-  };
-
   const mesAnterior = () => {
     const nuevoMes = new Date(mesSeleccionado);
     nuevoMes.setMonth(nuevoMes.getMonth() - 1);
@@ -232,84 +231,133 @@ export default function Index() {
     }
   }, [currentTipo]);
 
+  useEffect(() => {
+    let filtrados = historicoMovimientos;
+    if (categoriaFiltro) {
+      filtrados = filtrados.filter(mov => mov.categoria?.id === categoriaFiltro);
+    }
+    if (subcategoriaFiltro) {
+      filtrados = filtrados.filter(mov => mov.subcategoria?.id === subcategoriaFiltro);
+    }
+    setFilteredHistorico(filtrados);
+  }, [categoriaFiltro, subcategoriaFiltro, historicoMovimientos]);
+
+  const subcategoriasDisponibles = categorias.find(cat => cat.id === categoriaFiltro)?.subcategorias || [];
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-1 pt-8">
-        <View className="bg-white border-b border-gray-200 mb-2">
+        {/* Cabecera visual mejorada */}
+        <View className="bg-white border-b border-gray-200 mb-2 shadow-sm">
           <View className="flex-row items-center justify-between w-full px-4 py-4">
             <TouchableOpacity
               onPress={mesAnterior}
               className="bg-gray-100 p-2 rounded-full"
             >
-              <MaterialIcons name="chevron-left" size={24} color="#374151" />
+              <MaterialIcons name="chevron-left" size={28} color="#374151" />
             </TouchableOpacity>
-            <Text className="text-xl font-bold capitalize px-4">
+            <Text className="text-2xl font-extrabold capitalize px-4 text-gray-800">
               {formatearMesAño(mesSeleccionado)}
             </Text>
             <TouchableOpacity
               onPress={mesSiguiente}
               className="bg-gray-100 p-2 rounded-full"
             >
-              <MaterialIcons name="chevron-right" size={24} color="#374151" />
+              <MaterialIcons name="chevron-right" size={28} color="#374151" />
             </TouchableOpacity>
           </View>
 
-          <View className="w-full px-4 pb-4">
-            <View className={`${saldo >= 0 ? 'bg-green-600' : 'bg-red-500'} w-full h-12 rounded-lg items-center justify-center mb-2`}>
-              <Text className="text-white text-2xl">Saldo {saldo.toFixed(2)}€</Text>
-            </View>
-
-            <View className="flex-row justify-between gap-2">
-              <TouchableOpacity
-                className={`${currentTipo === 'ingreso' ? 'bg-green-600' : 'bg-green-500'} flex-1 h-12 rounded-lg items-center justify-center`}
-                onPress={() => setCurrentTipo('ingreso')}
-              >
-                <Text className="text-white text-lg">Ingresos</Text>
-                <Text className="text-white text-xl font-bold">+{ingresos.toFixed(2)}€</Text>
+          {/* Tarjetas de saldo, ingresos y gastos */}
+          <View className="flex flex-col">
+            <View className="w-full px-4 pb-4 flex-row gap-2">
+              <View className={`flex-1 rounded-xl p-4 items-center justify-center shadow-md ${saldo >= 0 ? 'bg-green-500' : 'bg-red-500'}`}>
+                <Text className="text-white text-lg font-semibold mb-1">Saldo</Text>
+                <Text className="text-white text-xl font-extrabold">{saldo.toFixed(2)}€</Text>
+              </View>
+              <TouchableOpacity className="flex-1 rounded-xl p-4 items-center justify-center shadow-md bg-green-100" onPress={() => setCurrentTipo('ingreso')}>
+                <Text className="text-green-700 text-lg font-semibold mb-1">Ingresos</Text>
+                <Text className="text-green-700 text-xl font-bold">+{ingresos.toFixed(2)}€</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                className={`${currentTipo === 'gasto' ? 'bg-red-600' : 'bg-red-500'} flex-1 h-12 rounded-lg items-center justify-center`}
-                onPress={() => setCurrentTipo('gasto')}
-              >
-                <Text className="text-white text-lg">Gastos</Text>
-                <Text className="text-white text-xl font-bold">-{gastos.toFixed(2)}€</Text>
+              <TouchableOpacity className="flex-1 rounded-xl p-4 items-center justify-center shadow-md bg-red-100" onPress={() => setCurrentTipo('gasto')}>
+                <Text className="text-red-700 text-lg font-semibold mb-1">Gastos</Text>
+                <Text className="text-red-700 text-xl font-bold">-{gastos.toFixed(2)}€</Text>
               </TouchableOpacity>
             </View>
-
             {currentTipo !== 'all' && (
-              <TouchableOpacity
-                className="mt-2 bg-gray-500 h-10 rounded-lg items-center justify-center"
-                onPress={() => setCurrentTipo('all')}
-              >
-                <Text className="text-white text-base">Ver todos los movimientos</Text>
-              </TouchableOpacity>
+              <View className='px-4 py-2'>
+                <TouchableOpacity
+                  className="w-full h-10 rounded-lg items-center justify-center bg-gray-400"
+                  onPress={() => setCurrentTipo('all')}
+                >
+                  <Text className="text-white text-base font-bold">Ver todos los movimientos</Text>
+                </TouchableOpacity>
+              </View>
+
             )}
+          </View>
+
+          {/* Filtros visuales */}
+          <View className="w-full px-4 flex-row gap-2 mb-2">
+            <View className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <Picker
+                selectedValue={categoriaFiltro}
+                onValueChange={(itemValue) => {
+                  setCategoriaFiltro(itemValue);
+                  setSubcategoriaFiltro('');
+                }}
+              >
+                <Picker.Item label="Todas las categorías" value="" />
+                {categorias.map(cat => (
+                  <Picker.Item key={cat.id} label={cat.nombre} value={cat.id} />
+                ))}
+              </Picker>
+            </View>
+            <View className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <Picker
+                enabled={!!categoriaFiltro}
+                selectedValue={subcategoriaFiltro}
+                onValueChange={(itemValue) => setSubcategoriaFiltro(itemValue)}
+              >
+                <Picker.Item label="Todas las subcategorías" value="" />
+                {subcategoriasDisponibles.map(sub => (
+                  <Picker.Item key={sub.id} label={sub.nombre} value={sub.id} />
+                ))}
+              </Picker>
+            </View>
           </View>
         </View>
 
-        <ScrollView className="w-full px-4 pb-30">
-          {gastosMensuales.map((ingreso) => (
-            <RegistroMovimiento key={ingreso.id} movimiento={ingreso} setMovimiento={setMovimiento} handleAddMovimiento={handleAddMovimiento} />
-          ))}
+        {/* Lista de movimientos */}
+        <ScrollView className="w-full px-4 pb-32">
+          {gastosMensuales.length === 0 ? (
+            <View className="items-center justify-center mt-10">
+              <MaterialIcons name="hourglass-empty" size={48} color="#9CA3AF" />
+              <Text className="text-gray-400 mt-2">No hay movimientos para este mes y filtro</Text>
+            </View>
+          ) : (
+            gastosMensuales.map((ingreso) => (
+              <RegistroMovimiento key={ingreso.id} movimiento={ingreso} setMovimiento={setMovimiento} handleAddMovimiento={handleAddMovimiento} />
+            ))
+          )}
         </ScrollView>
       </View>
-      <View className="absolute bottom-5 left-0 right-0 flex-row justify-between px-10 pb-6">
+      {/* Botones de añadir fijos, fuera del área de tarjetas */}
+      <View className="absolute bottom-0 left-0 right-0 flex-row justify-center gap-10 pb-8 bg-transparent z-10">
         <TouchableOpacity
-          className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg"
+          className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-2xl border-4 border-white"
           onPress={() => {
             handleAddMovimiento('gasto');
           }}
         >
-          <Text className="text-3xl font-bold text-white">-</Text>
+          <MaterialIcons name="remove" size={36} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity
-          className="w-16 h-16 rounded-full bg-green-500 items-center justify-center shadow-lg"
+          className="w-16 h-16 rounded-full bg-green-500 items-center justify-center shadow-2xl border-4 border-white"
           onPress={() => {
             handleAddMovimiento('ingreso');
           }}
         >
-          <Text className="text-3xl font-bold text-white">+</Text>
+          <MaterialIcons name="add" size={36} color="#fff" />
         </TouchableOpacity>
       </View>
 

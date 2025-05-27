@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker';
 import React, { useContext, useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import FormularioCategoria from './FormularioCategoria';
+import ModalConfirmacion from './ModalConfirmacion';
 import TicketScanner from './TicketScanner';
 
 export default function FormularioMovimiento({
@@ -35,7 +36,7 @@ export default function FormularioMovimiento({
     const [descripcion, setDescripcion] = useState('');
     const [fecha, setFecha] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const { categorias, handleUpdateCategoria } = useContext(CategoryContext) as {
+    const { categorias } = useContext(CategoryContext) as {
         categorias: Categoria[];
         handleAddCategoria: Function;
         handleUpdateCategoria: Function;
@@ -44,6 +45,7 @@ export default function FormularioMovimiento({
     const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<Subcategoria | null>(null);
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [showScanner, setShowScanner] = useState(false);
+    const [duplicate, setDuplicate] = useState(false);
 
     const handleSubmit = async () => {
         if (!cantidad) {
@@ -63,11 +65,15 @@ export default function FormularioMovimiento({
             );
             return;
         }
-        console.log(tipoTransaccion);
+        let movimientoActual = movimiento;
+        if (duplicate) {
+            movimientoActual = null;
+        }
+
         if (tipoTransaccion === 'ingreso') {
-            await handleIngreso(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimiento);
+            await handleIngreso(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
         } else {
-            await handleGasto(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimiento);
+            await handleGasto(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
         }
 
         //Limpiamos el formulario
@@ -108,14 +114,18 @@ export default function FormularioMovimiento({
 
     const handleTicketScanned = (data: { concepto: string, cantidad: number, fecha: Date }) => {
         setShowScanner(false);
-
-        console.log(data);
-
-        // Rellenar automáticamente los campos con los datos extraídos
         setConcepto(data.concepto);
         setCantidad(data.cantidad.toString());
         setFecha(data.fecha);
     };
+
+    const handleDuplicate = () => {
+        setDuplicate(true);
+    }
+
+    const confirmDuplicate = () => {
+        handleSubmit();
+    }
 
     useEffect(() => {
         if (movimiento && modalVisible) {
@@ -156,9 +166,17 @@ export default function FormularioMovimiento({
                 <View className="flex-1 bg-black/60 justify-center px-4">
                     <View className="bg-white rounded-2xl p-6 shadow-xl">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-2xl font-bold text-gray-800">
-                                {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
-                            </Text>
+                            <View className="flex-row items-center">
+                                <TouchableOpacity
+                                    onPress={handleClose}
+                                    className="p-2 mr-2"
+                                >
+                                    <MaterialIcons name="close" size={24} color="#374151" />
+                                </TouchableOpacity>
+                                <Text className="text-2xl font-bold text-gray-800">
+                                    {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
+                                </Text>
+                            </View>
                             <TouchableOpacity
                                 className="bg-blue-600 p-4 rounded-full shadow-lg flex-row items-center space-x-2"
                                 onPress={() => setShowScanner(true)}
@@ -358,19 +376,21 @@ export default function FormularioMovimiento({
                         </ScrollView>
 
                         <View className="flex-row justify-between mt-8">
-                            <TouchableOpacity
-                                className="bg-gray-400 px-6 py-3 rounded-xl shadow-sm"
-                                onPress={handleClose}
-                            >
-                                <Text className="text-white font-medium">Cancelar</Text>
-                            </TouchableOpacity>
-
                             {movimiento && (
                                 <TouchableOpacity
                                     className="bg-red-500 px-6 py-3 rounded-xl shadow-sm"
                                     onPress={handleDelete}
                                 >
                                     <Text className="text-white font-medium">Eliminar</Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {movimiento && (
+                                <TouchableOpacity
+                                    className="bg-blue-500 px-6 py-3 rounded-xl shadow-sm"
+                                    onPress={handleDuplicate}
+                                >
+                                    <Text className="text-white font-medium">Duplicar</Text>
                                 </TouchableOpacity>
                             )}
 
@@ -402,6 +422,15 @@ export default function FormularioMovimiento({
                         <TicketScanner onTicketProcessed={handleTicketScanned} />
                     </View>
                 </Modal>
+
+                <ModalConfirmacion
+                    visible={duplicate}
+                    onClose={() => setDuplicate(false)}
+                    onConfirm={confirmDuplicate}
+                    titulo="Confirmar duplicación"
+                    mensaje="¿Estás seguro de que quieres duplicar este movimiento?"
+                    textoConfirmar="Duplicar"
+                />
 
                 <FormularioCategoria
                     modalVisible={showAddCategory}
