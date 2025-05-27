@@ -12,11 +12,14 @@ export default function Index() {
   const [ingresos, setIngresos] = useState<number>(0);
   const [saldo, setSaldo] = useState<number>(0);
   const [historicoMovimientos, setHistoricoMovimientos] = useState<Movimiento[]>([]);
+  const [filteredHistorico, setFilteredHistorico] = useState<Movimiento[]>([]);
   const [mesSeleccionado, setMesSeleccionado] = useState(new Date());
   const [gastosMensuales, setGastosMensuales] = useState<Movimiento[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [tipoTransaccion, setTipoTransaccion] = useState<'ingreso' | 'gasto'>('ingreso');
+  const [currentTipo, setCurrentTipo] = useState<'ingreso' | 'gasto' | 'all'>('all');
   const [movimiento, setMovimiento] = useState<Movimiento | null>(null);
+
   const cargarDatos = async () => {
     try {
       const historicoGuardado = await AsyncStorage.getItem('historico');
@@ -83,13 +86,11 @@ export default function Index() {
 
   const handleGasto = async (cantidad: number, concepto: string, descripcion: string, fecha: Date, categoria: Categoria, subcategoria: Subcategoria, gasto: Movimiento) => {
     try {
-      console.log("gasto", gasto);
-      console.log(cantidad);
       const nuevoGasto: Movimiento = {
         id: gasto ? gasto.id : Date.now().toString(),
         concepto,
         descripcion,
-        cantidad: gasto ? cantidad : -cantidad,
+        cantidad: cantidad > 0 ? -cantidad : cantidad,
         fecha: fecha.toISOString(),
         categoria,
         subcategoria
@@ -167,12 +168,25 @@ export default function Index() {
     const primerDia = getPrimerDiaMes(mesSeleccionado);
     const ultimoDia = getUltimoDiaMes(mesSeleccionado);
 
-    const gastosFiltrados = historicoMovimientos.filter(ingreso => {
+    //Obtenemos los gastos del mes
+    let gastosFiltrados = filteredHistorico.filter(ingreso => {
       const fechaIngreso = new Date(ingreso.fecha);
       return fechaIngreso >= primerDia && fechaIngreso <= ultimoDia;
     });
 
-    setGastosMensuales(gastosFiltrados);
+    //Ordenamos los gastod de más a menos recientes
+    const ordered = gastosFiltrados.sort((a: Movimiento, b: Movimiento) => {
+      const fechaA = new Date(a.fecha).getTime();
+      const fechaB = new Date(b.fecha).getTime();
+      return fechaB - fechaA;
+    });
+
+    setGastosMensuales(ordered);
+
+    gastosFiltrados = historicoMovimientos.filter(ingreso => {
+      const fechaIngreso = new Date(ingreso.fecha);
+      return fechaIngreso >= primerDia && fechaIngreso <= ultimoDia;
+    });
 
     const totalIngresosMes = gastosFiltrados
       .filter(ing => ing.cantidad > 0)
@@ -182,14 +196,41 @@ export default function Index() {
       .filter(ing => ing.cantidad < 0)
       .reduce((sum, ing) => sum + Math.abs(ing.cantidad), 0);
 
+    //Calculamos ingresos, gastos y saldo del mes
     setIngresos(totalIngresosMes);
     setGastos(totalGastosMes);
     setSaldo(totalIngresosMes - totalGastosMes);
-  }, [mesSeleccionado, historicoMovimientos]);
+  }, [mesSeleccionado, filteredHistorico]);
 
   useEffect(() => {
     cargarDatos();
   }, []);
+
+  useEffect(() => {
+    if (historicoMovimientos) {
+      setFilteredHistorico(historicoMovimientos);
+    }
+  }, [historicoMovimientos]);
+
+  useEffect(() => {
+    if (currentTipo === 'ingreso') {
+      const filtered = historicoMovimientos.filter((historico) => {
+        if (historico.cantidad > 0) {
+          return historico;
+        }
+      });
+      setFilteredHistorico(filtered);
+    } else if (currentTipo === 'gasto') {
+      const filtered = historicoMovimientos.filter((historico) => {
+        if (historico.cantidad < 0) {
+          return historico;
+        }
+      });
+      setFilteredHistorico(filtered);
+    } else if (currentTipo === 'all') {
+      setFilteredHistorico(historicoMovimientos);
+    }
+  }, [currentTipo]);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -215,20 +256,35 @@ export default function Index() {
 
           <View className="w-full px-4 pb-4">
             <View className={`${saldo >= 0 ? 'bg-green-600' : 'bg-red-500'} w-full h-12 rounded-lg items-center justify-center mb-2`}>
-              <Text className="text-white text-2xl">Saldo {saldo}€</Text>
+              <Text className="text-white text-2xl">Saldo {saldo.toFixed(2)}€</Text>
             </View>
 
             <View className="flex-row justify-between gap-2">
-              <View className="bg-green-500 flex-1 h-12 rounded-lg items-center justify-center">
+              <TouchableOpacity
+                className={`${currentTipo === 'ingreso' ? 'bg-green-600' : 'bg-green-500'} flex-1 h-12 rounded-lg items-center justify-center`}
+                onPress={() => setCurrentTipo('ingreso')}
+              >
                 <Text className="text-white text-lg">Ingresos</Text>
-                <Text className="text-white text-xl font-bold">+{ingresos}€</Text>
-              </View>
+                <Text className="text-white text-xl font-bold">+{ingresos.toFixed(2)}€</Text>
+              </TouchableOpacity>
 
-              <View className="bg-red-500 flex-1 h-12 rounded-lg items-center justify-center">
+              <TouchableOpacity
+                className={`${currentTipo === 'gasto' ? 'bg-red-600' : 'bg-red-500'} flex-1 h-12 rounded-lg items-center justify-center`}
+                onPress={() => setCurrentTipo('gasto')}
+              >
                 <Text className="text-white text-lg">Gastos</Text>
-                <Text className="text-white text-xl font-bold">-{gastos}€</Text>
-              </View>
+                <Text className="text-white text-xl font-bold">-{gastos.toFixed(2)}€</Text>
+              </TouchableOpacity>
             </View>
+
+            {currentTipo !== 'all' && (
+              <TouchableOpacity
+                className="mt-2 bg-gray-500 h-10 rounded-lg items-center justify-center"
+                onPress={() => setCurrentTipo('all')}
+              >
+                <Text className="text-white text-base">Ver todos los movimientos</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -265,8 +321,10 @@ export default function Index() {
         setModalVisible={setModalVisible}
         handleDeleteMovimiento={handleDeleteMovimiento}
         movimiento={movimiento}
+        setMovimiento={setMovimiento}
+        setTipoTransaccion={setTipoTransaccion}
       />
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
