@@ -1,8 +1,9 @@
 import { Movimiento } from "@/models/Movimiento";
+import { MaterialIcons } from "@expo/vector-icons";
+import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 export default function RegistroMovimiento({ movimiento, handleAddMovimiento, setMovimiento }: { movimiento: Movimiento, handleAddMovimiento: Function, setMovimiento: Function }) {
-
     const fecha = new Date(movimiento?.fecha);
     const fechaFormateada = fecha instanceof Date && !isNaN(fecha.getTime())
         ? fecha.toLocaleDateString('es-ES')
@@ -14,19 +15,64 @@ export default function RegistroMovimiento({ movimiento, handleAddMovimiento, se
     }
 
     return (
-        <TouchableOpacity className="flex-row justify-between items-center p-2 border-b border-gray-200 mt-2" onPress={handleOnClick}>
-            <View>
-                <View className="flex flex-col gap-2">
-                    <Text className="font-bold">{movimiento?.concepto}</Text>
-                    <Text>{movimiento?.categoria?.nombre ? `Categoria: ${movimiento.categoria.nombre}` : 'Sin categoria'}</Text>
-                    <Text className="text-gray-500">{fechaFormateada}</Text>
-                </View>
-                <Text>{movimiento?.descripcion}</Text>
-            </View>
+        <TouchableOpacity
+            className="bg-white p-4 rounded-lg mb-2 shadow-sm border border-gray-100"
+            onPress={handleOnClick}
+        >
+            <View className="flex-row justify-between items-start">
+                <View className="flex-1 mr-4">
+                    <View className="flex-row items-center gap-2 mb-2">
+                        <MaterialIcons
+                            name={movimiento.cantidad > 0 ? "arrow-upward" : "arrow-downward"}
+                            size={20}
+                            color={movimiento.cantidad > 0 ? "#16a34a" : "#dc2626"}
+                        />
+                        {movimiento?.concepto && (
+                            <Text className="font-bold text-lg">{movimiento.concepto}</Text>
+                        )}
+                    </View>
 
-            <Text className={`font-bold ${movimiento.cantidad > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {movimiento?.cantidad > 0 ? '+' : ''}{movimiento?.cantidad}€
-            </Text>
+                    <View className="flex-row items-center gap-2 mb-1">
+                        {movimiento?.categoria?.nombre && (
+                            <>
+                                <MaterialIcons name="category" size={16} color="#6b7280" />
+                                <Text className="text-gray-600">
+                                    <Text className="font-medium">Categoria</Text>
+                                    <Text>: {movimiento.categoria.nombre}</Text>
+                                </Text>
+                            </>
+                        )}
+                    </View>
+
+                    {movimiento?.subcategoria?.nombre && (
+                        <View className="flex-row items-center gap-2 mb-1">
+                            <MaterialIcons name="subdirectory-arrow-right" size={16} color="#6b7280" />
+                            <Text className="text-gray-600">
+                                <Text className="font-medium">Subcategoria</Text>
+                                <Text>: {movimiento.subcategoria.nombre}</Text>
+                            </Text>
+                        </View>
+                    )}
+
+                    <View className="flex-row items-center gap-2 mt-2">
+                        <MaterialIcons name="calendar-today" size={16} color="#6b7280" />
+                        <Text className="text-gray-500 text-sm">{fechaFormateada}</Text>
+                    </View>
+
+                    {movimiento?.descripcion && (
+                        <View className="flex-row items-start gap-2 mt-2">
+                            <MaterialIcons name="description" size={16} color="#6b7280" />
+                            <Text className="text-gray-600 flex-1">{movimiento.descripcion}</Text>
+                        </View>
+                    )}
+                </View>
+
+                <View className="bg-gray-50 px-3 py-2 rounded-lg">
+                    <Text className={`font-bold text-lg ${movimiento.cantidad > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {movimiento?.cantidad > 0 ? '+' : ''}{movimiento?.cantidad}€
+                    </Text>
+                </View>
+            </View>
         </TouchableOpacity>
     );
 }

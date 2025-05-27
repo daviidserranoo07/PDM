@@ -1,6 +1,7 @@
 import RegistroMovimiento from '@/components/RegistroMovimiento';
 import { Categoria, Subcategoria } from '@/models/Categoria';
 import { Movimiento } from '@/models/Movimiento';
+import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from "react";
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -15,8 +16,7 @@ export default function Index() {
   const [gastosMensuales, setGastosMensuales] = useState<Movimiento[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [tipoTransaccion, setTipoTransaccion] = useState<'ingreso' | 'gasto'>('ingreso');
-  const [movimiento, setMovimiento] = useState<Movimiento>(null);
-
+  const [movimiento, setMovimiento] = useState<Movimiento | null>(null);
   const cargarDatos = async () => {
     try {
       const historicoGuardado = await AsyncStorage.getItem('historico');
@@ -192,55 +192,52 @@ export default function Index() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-white pt-20">
-      <View className="flex-1 items-center justify-center">
-        <View className="flex-row items-center justify-between w-full px-4 mb-4">
-          <TouchableOpacity onPress={mesAnterior}>
-            <Text className="text-2xl">←</Text>
-          </TouchableOpacity>
-          <Text className="text-xl font-bold capitalize">
-            {formatearMesAño(mesSeleccionado)}
-          </Text>
-          <TouchableOpacity onPress={mesSiguiente}>
-            <Text className="text-2xl">→</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View className="w-full px-4 mb-4">
-          <View className={`${saldo >= 0 ? 'bg-green-600' : 'bg-red-500'} w-full h-12 rounded-lg items-center justify-center mb-2`}>
-            <Text className="text-white text-2xl">Saldo {saldo}€</Text>
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-1 pt-8">
+        <View className="bg-white border-b border-gray-200 mb-2">
+          <View className="flex-row items-center justify-between w-full px-4 py-4">
+            <TouchableOpacity
+              onPress={mesAnterior}
+              className="bg-gray-100 p-2 rounded-full"
+            >
+              <MaterialIcons name="chevron-left" size={24} color="#374151" />
+            </TouchableOpacity>
+            <Text className="text-xl font-bold capitalize px-4">
+              {formatearMesAño(mesSeleccionado)}
+            </Text>
+            <TouchableOpacity
+              onPress={mesSiguiente}
+              className="bg-gray-100 p-2 rounded-full"
+            >
+              <MaterialIcons name="chevron-right" size={24} color="#374151" />
+            </TouchableOpacity>
           </View>
 
-          <View className="flex-row justify-between gap-2">
-            <View className="bg-green-500 flex-1 h-12 rounded-lg items-center justify-center">
-              <Text className="text-white text-lg">Ingresos</Text>
-              <Text className="text-white text-xl font-bold">+{ingresos}€</Text>
+          <View className="w-full px-4 pb-4">
+            <View className={`${saldo >= 0 ? 'bg-green-600' : 'bg-red-500'} w-full h-12 rounded-lg items-center justify-center mb-2`}>
+              <Text className="text-white text-2xl">Saldo {saldo}€</Text>
             </View>
 
-            <View className="bg-red-500 flex-1 h-12 rounded-lg items-center justify-center">
-              <Text className="text-white text-lg">Gastos</Text>
-              <Text className="text-white text-xl font-bold">-{gastos}€</Text>
+            <View className="flex-row justify-between gap-2">
+              <View className="bg-green-500 flex-1 h-12 rounded-lg items-center justify-center">
+                <Text className="text-white text-lg">Ingresos</Text>
+                <Text className="text-white text-xl font-bold">+{ingresos}€</Text>
+              </View>
+
+              <View className="bg-red-500 flex-1 h-12 rounded-lg items-center justify-center">
+                <Text className="text-white text-lg">Gastos</Text>
+                <Text className="text-white text-xl font-bold">-{gastos}€</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        <ScrollView className="mt-4 w-full px-4">
+        <ScrollView className="w-full px-4 pb-30">
           {gastosMensuales.map((ingreso) => (
             <RegistroMovimiento key={ingreso.id} movimiento={ingreso} setMovimiento={setMovimiento} handleAddMovimiento={handleAddMovimiento} />
           ))}
         </ScrollView>
       </View>
-
-      <FormularioMovimiento
-        handleIngreso={handleIngreso}
-        handleGasto={handleGasto}
-        tipoTransaccion={tipoTransaccion}
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        handleDeleteMovimiento={handleDeleteMovimiento}
-        movimiento={movimiento}
-      />
-
       <View className="absolute bottom-5 left-0 right-0 flex-row justify-between px-10 pb-6">
         <TouchableOpacity
           className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg"
@@ -259,6 +256,16 @@ export default function Index() {
           <Text className="text-3xl font-bold text-white">+</Text>
         </TouchableOpacity>
       </View>
+
+      <FormularioMovimiento
+        handleIngreso={handleIngreso}
+        handleGasto={handleGasto}
+        tipoTransaccion={tipoTransaccion}
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        handleDeleteMovimiento={handleDeleteMovimiento}
+        movimiento={movimiento}
+      />
     </SafeAreaView>
   );
 }

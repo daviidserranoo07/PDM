@@ -21,7 +21,7 @@ export default function RootLayout() {
           options={{
             title: "Categorías",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="list" size={size} color={color} />
+              <Ionicons name="list-outline" size={size} color={color} />
             ),
           }}
         />

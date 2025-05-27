@@ -8,7 +8,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
 
     const handleLoadCategorias = async () => {
         try {
-            await AsyncStorage.clear();
+            //await AsyncStorage.clear();
             const data = await AsyncStorage.getItem('categorias');
             if (data) {
                 const categoriasActuales = await JSON.parse(data);
@@ -22,12 +22,10 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     //Función para añadir una nueva categoria
     const handleAddCategoria = async (nuevaCategoria: Categoria) => {
         try {
-            console.log("nueva", nuevaCategoria);
             const data = await AsyncStorage.getItem('categorias');
             if (data) {
                 const categoriasActuales = await JSON.parse(data);
                 const nuevasCategorias = [...categoriasActuales, nuevaCategoria];
-                console.log(nuevaCategoria);
                 await AsyncStorage.setItem('categorias', JSON.stringify(nuevasCategorias));
                 setCategorias(nuevasCategorias);
             } else {

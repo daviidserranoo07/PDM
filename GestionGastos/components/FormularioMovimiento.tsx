@@ -21,7 +21,7 @@ export default function FormularioMovimiento({
     tipoTransaccion: string,
     modalVisible: boolean,
     setModalVisible: Function,
-    movimiento: Movimiento,
+    movimiento: Movimiento | null,
     handleDeleteMovimiento: Function,
 }) {
     const [cantidad, setCantidad] = useState('');
@@ -114,10 +114,11 @@ export default function FormularioMovimiento({
             setCantidad(movimiento.cantidad.toString());
             setConcepto(movimiento.concepto);
             setFecha(new Date(movimiento.fecha));
-            setCategoriaSeleccionada(movimiento.categoria);
+            const categoriaEncontrada = categorias.find((current) => current.id === movimiento?.categoria?.id);
+            setCategoriaSeleccionada(categoriaEncontrada || null);
             setSubcategoriaSeleccionada(movimiento.subcategoria);
         }
-    }, [movimiento])
+    }, [movimiento]);
 
     return (
         <>
@@ -129,11 +130,10 @@ export default function FormularioMovimiento({
             >
                 <View className="flex-1 bg-black/60 justify-center px-4">
                     <View className="bg-white rounded-2xl p-6 ">
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text className="text-xl font-semibold border border-black text-center mb-6">
-                                {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
-                            </Text>
-
+                        <Text className="text-xl font-semibold border border-black text-center mb-6">
+                            {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
+                        </Text>
+                        <ScrollView className='max-h-[600px]' showsVerticalScrollIndicator={true}>
                             <View className="mb-4">
                                 <Text className="text-gray-600 mb-1">
                                     Concepto
@@ -161,6 +161,19 @@ export default function FormularioMovimiento({
 
                             <View className="mb-4">
                                 <Text className="text-gray-600 mb-1">
+                                    Fecha <Text className="text-red-500">*</Text>
+                                </Text>
+                                <TouchableOpacity
+                                    className="border border-gray-300 rounded-lg px-3 py-2"
+                                    onPress={() => setShowDatePicker(true)}
+                                    style={{ borderWidth: 1, borderColor: '#d1d5db' }}
+                                >
+                                    <Text>{fecha.toLocaleDateString()}</Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View className="mb-4">
+                                <Text className="text-gray-600 mb-1">
                                     Descripción
                                 </Text>
                                 <TextInput
@@ -180,7 +193,7 @@ export default function FormularioMovimiento({
                                         className="bg-blue-500 px-3 py-1 rounded"
                                         onPress={() => setShowAddCategory(true)}
                                     >
-                                        <Text className="text-white">Añadir categoria</Text>
+                                        <Text className="text-white">{`${categoriaSeleccionada ? 'Editar categoria' : 'Añadir categoria'}`}</Text>
                                     </TouchableOpacity>
                                 </View>
                                 <View className="flex-row items-center">
@@ -221,12 +234,6 @@ export default function FormularioMovimiento({
                                 <View className="mb-4">
                                     <View className="flex-row justify-between items-center mb-2">
                                         <Text className="text-gray-600">Subcategorías</Text>
-                                        <TouchableOpacity
-                                            className="bg-blue-500 px-3 py-1 rounded"
-                                            onPress={() => setShowAddSubcategory(true)}
-                                        >
-                                            <Text className="text-white">Añadir subcategoría</Text>
-                                        </TouchableOpacity>
                                     </View>
 
                                     {categoriaSeleccionada.subcategorias && categoriaSeleccionada.subcategorias.length > 0 && (
@@ -261,49 +268,8 @@ export default function FormularioMovimiento({
                                             </Picker>
                                         </View>
                                     )}
-
-                                    {showAddSubcategory && (
-                                        <View className="bg-gray-100 p-4 rounded-lg">
-                                            <TextInput
-                                                className="border border-gray-300 rounded-lg px-3 py-2 mb-2"
-                                                placeholder="Nombre de la subcategoría"
-                                                value={nuevaSubcategoria}
-                                                onChangeText={setNuevaSubcategoria}
-                                            />
-                                            <View className="flex-row justify-end gap-2">
-                                                <TouchableOpacity
-                                                    className="bg-gray-400 px-3 py-1 rounded"
-                                                    onPress={() => {
-                                                        setShowAddSubcategory(false);
-                                                        setNuevaSubcategoria('');
-                                                    }}
-                                                >
-                                                    <Text className="text-white">Cancelar</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    className="bg-green-500 px-3 py-1 rounded"
-                                                    onPress={handleAddSubcategoria}
-                                                >
-                                                    <Text className="text-white">Guardar</Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    )}
                                 </View>
                             )}
-
-                            <View className="mb-4">
-                                <Text className="text-gray-600 mb-1">
-                                    Fecha <Text className="text-red-500">*</Text>
-                                </Text>
-                                <TouchableOpacity
-                                    className="border border-gray-300 rounded-lg px-3 py-2"
-                                    onPress={() => setShowDatePicker(true)}
-                                    style={{ borderWidth: 1, borderColor: '#d1d5db' }}
-                                >
-                                    <Text>{fecha.toLocaleDateString()}</Text>
-                                </TouchableOpacity>
-                            </View>
 
                             {showDatePicker && (
                                 <DateTimePicker
@@ -316,40 +282,40 @@ export default function FormularioMovimiento({
                                     }}
                                 />
                             )}
-
-                            <View className="flex-row justify-between mt-10">
-                                <TouchableOpacity
-                                    className="bg-gray-400 px-5 py-2 rounded-lg"
-                                    onPress={() => setModalVisible(false)}
-                                >
-                                    <Text className="text-white text-base">Cancelar</Text>
-                                </TouchableOpacity>
-
-
-                                {movimiento ? <TouchableOpacity
-                                    className="bg-red-500 px-5 py-2 rounded-lg"
-                                    onPress={handleDelete}
-                                >
-                                    <Text className="text-white text-base">Eliminar</Text>
-                                </TouchableOpacity> : null}
-
-                                <TouchableOpacity
-                                    className="bg-green-600 px-5 py-2 rounded-lg"
-                                    onPress={handleSubmit}
-                                >
-                                    <Text className="text-white text-base">Guardar</Text>
-                                </TouchableOpacity>
-                            </View>
                         </ScrollView>
+
+                        <View className="flex-row justify-between mt-10">
+                            <TouchableOpacity
+                                className="bg-gray-400 px-5 py-2 rounded-lg"
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text className="text-white text-base">Cancelar</Text>
+                            </TouchableOpacity>
+
+
+                            {movimiento ? <TouchableOpacity
+                                className="bg-red-500 px-5 py-2 rounded-lg"
+                                onPress={handleDelete}
+                            >
+                                <Text className="text-white text-base">Eliminar</Text>
+                            </TouchableOpacity> : null}
+
+                            <TouchableOpacity
+                                className="bg-green-600 px-5 py-2 rounded-lg"
+                                onPress={handleSubmit}
+                            >
+                                <Text className="text-white text-base">Guardar</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
+                <FormularioCategoria
+                    modalVisible={showAddCategory}
+                    setModalVisible={setShowAddCategory}
+                    categoria={categoriaSeleccionada}
+                    setCategoria={null}
+                />
             </Modal>
-
-            <FormularioCategoria
-                modalVisible={showAddCategory}
-                setModalVisible={setShowAddCategory}
-                id={''}
-            />
         </>
     );
 }
