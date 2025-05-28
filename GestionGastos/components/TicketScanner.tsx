@@ -125,6 +125,7 @@ export default function TicketScanner({ onTicketProcessed }: { onTicketProcessed
     //Función para obtener la información de la imagen después de pasarlo por el OCR
     const parseTicketText = (text: string) => {
         const lines = text.split('\n');
+        console.log("lines", lines);
         let total = 0;
         let concepto = '';
         let fecha = new Date();

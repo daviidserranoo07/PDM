@@ -16,7 +16,7 @@ export default function RegistroMovimiento({ movimiento, handleAddMovimiento, se
 
     return (
         <TouchableOpacity
-            className="bg-white p-4 rounded-lg mb-2 shadow-sm border border-gray-100"
+            className="bg-white p-2 rounded-lg mb-2 shadow-sm border border-gray-100"
             onPress={handleOnClick}
         >
             <View className="flex-row justify-between items-start">
@@ -27,36 +27,31 @@ export default function RegistroMovimiento({ movimiento, handleAddMovimiento, se
                             size={20}
                             color={movimiento.cantidad > 0 ? "#16a34a" : "#dc2626"}
                         />
-                        {movimiento?.concepto && (
-                            <Text className="font-bold text-lg">{movimiento.concepto}</Text>
-                        )}
+                        {movimiento?.concepto ? (
+                            <Text className="font-bold text-md">{movimiento.concepto}</Text>
+                        ) : null}
                     </View>
 
-                    <View className="flex-row items-center gap-2 mb-1">
-                        {movimiento?.categoria?.nombre && (
-                            <>
-                                <MaterialIcons name="category" size={16} color="#6b7280" />
-                                <Text className="text-gray-600">
-                                    <Text className="font-medium">Categoria</Text>
-                                    <Text>: {movimiento.categoria.nombre}</Text>
-                                </Text>
-                            </>
-                        )}
-                    </View>
-
-                    {movimiento?.subcategoria?.nombre && (
+                    <View className="flex flex-row justify-between w-full">
                         <View className="flex-row items-center gap-2 mb-1">
-                            <MaterialIcons name="subdirectory-arrow-right" size={16} color="#6b7280" />
-                            <Text className="text-gray-600">
-                                <Text className="font-medium">Subcategoria</Text>
-                                <Text>: {movimiento.subcategoria.nombre}</Text>
-                            </Text>
+                            {movimiento?.categoria?.nombre ? (
+                                <>
+                                    <MaterialIcons name="category" size={16} color="#6b7280" />
+                                    <Text className="text-gray-600">
+                                        <Text>{movimiento.categoria.nombre}</Text>
+                                    </Text>
+                                </>
+                            ) : null}
                         </View>
-                    )}
 
-                    <View className="flex-row items-center gap-2 mt-2">
-                        <MaterialIcons name="calendar-today" size={16} color="#6b7280" />
-                        <Text className="text-gray-500 text-sm">{fechaFormateada}</Text>
+                        {movimiento?.subcategoria?.nombre ? (
+                            <View className="flex-row items-center gap-2 mb-1">
+                                <MaterialIcons name="subdirectory-arrow-right" size={16} color="#6b7280" />
+                                <Text className="text-gray-600">
+                                    <Text>{movimiento.subcategoria.nombre}</Text>
+                                </Text>
+                            </View>
+                        ) : null}
                     </View>
 
                     {movimiento?.descripcion && (
@@ -68,7 +63,7 @@ export default function RegistroMovimiento({ movimiento, handleAddMovimiento, se
                 </View>
 
                 <View className="bg-gray-50 px-3 py-2 rounded-lg">
-                    <Text className={`font-bold text-lg ${movimiento.cantidad > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <Text className={`font-bold text-md ${movimiento.cantidad > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {movimiento?.cantidad > 0 ? '+' : ''}{movimiento?.cantidad}€
                     </Text>
                 </View>

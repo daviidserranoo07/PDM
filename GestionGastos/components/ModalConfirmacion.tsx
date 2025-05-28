@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 interface ModalConfirmacionProps {
@@ -9,6 +9,7 @@ interface ModalConfirmacionProps {
     mensaje: string;
     textoCancelar?: string;
     textoConfirmar?: string;
+    children: ReactNode
 }
 
 export default function ModalConfirmacion({
@@ -18,7 +19,8 @@ export default function ModalConfirmacion({
     titulo,
     mensaje,
     textoCancelar = "Cancelar",
-    textoConfirmar = "Confirmar"
+    textoConfirmar = "Confirmar",
+    children
 }: ModalConfirmacionProps) {
     return (
         <Modal
@@ -35,6 +37,7 @@ export default function ModalConfirmacion({
                     <Text className="text-gray-600 mb-6">
                         {mensaje}
                     </Text>
+                    {children}
                     <View className="flex-row justify-end space-x-4 gap-4">
                         <TouchableOpacity
                             className="bg-gray-400 px-6 py-3 rounded-xl"

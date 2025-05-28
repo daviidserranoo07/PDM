@@ -3,17 +3,33 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { CategoryContext } from "./CategoryContext";
 
+// Definimos la categoría por defecto
+// const CATEGORIA_DEFAULT: Categoria = {
+//     id: "default",
+//     nombre: "Varios",
+//     tipo: 'gasto',
+//     subcategorias: [{
+//         id: "default-sub",
+//         nombre: "Varios"
+//     }]
+// };
+
 export function CategoryProvider({ children }: { children: React.ReactNode }) {
     const [categorias, setCategorias] = useState<Categoria[]>([]);
 
     const handleLoadCategorias = async () => {
         try {
-            //await AsyncStorage.clear();
             const data = await AsyncStorage.getItem('categorias');
+            let categoriasActuales: Categoria[] = [];
+
             if (data) {
-                const categoriasActuales = await JSON.parse(data);
-                setCategorias(categoriasActuales);
+                categoriasActuales = await JSON.parse(data);
             }
+
+
+            await AsyncStorage.setItem('categorias', JSON.stringify(categoriasActuales));
+
+            setCategorias(categoriasActuales);
         } catch (error) {
             console.log(error);
         }
@@ -67,7 +83,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
                 const categoriasActuales = await JSON.parse(data);
                 const nuevasCategoria = categoriasActuales
                     .filter((categoria: Categoria) => categoria && categoria.id !== categoriaEliminada.id)
-                    .filter(Boolean); // Elimina cualquier elemento null o undefined que pudiera quedar
+                    .filter(Boolean);
                 await AsyncStorage.setItem('categorias', JSON.stringify(nuevasCategoria));
                 setCategorias(nuevasCategoria);
             }

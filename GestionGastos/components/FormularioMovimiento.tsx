@@ -46,12 +46,33 @@ export default function FormularioMovimiento({
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [showScanner, setShowScanner] = useState(false);
     const [duplicate, setDuplicate] = useState(false);
+    const [editable, setEditable] = useState<boolean>(false);
+    const [showDuplicateDatePicker, setShowDuplicateDatePicker] = useState(false);
 
     const handleSubmit = async () => {
         if (!cantidad) {
             Alert.alert(
                 "No valido",
                 "Por favor, introduzca una cantidad",
+                [{ text: "OK" }]
+            );
+            return;
+        }
+
+        if (!concepto) {
+            Alert.alert(
+                "No valido",
+                "Por favor, introduzca un concepto",
+                [{ text: "OK" }]
+            );
+            return;
+        }
+
+        if (!categoriaSeleccionada) {
+            const categoriasTipo = categorias.filter((current) => current.tipo === tipoTransaccion);
+            Alert.alert(
+                "No valido",
+                `${categoriasTipo.length > 0 ? `Por favor, seleccione una categoria` : 'Debe crear al menos una categoria para este tipo de movimiento'}`,
                 [{ text: "OK" }]
             );
             return;
@@ -68,6 +89,7 @@ export default function FormularioMovimiento({
         let movimientoActual = movimiento;
         if (duplicate) {
             movimientoActual = null;
+            console.log(fecha);
         }
 
         if (tipoTransaccion === 'ingreso') {
@@ -76,20 +98,23 @@ export default function FormularioMovimiento({
             await handleGasto(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
         }
 
-        //Limpiamos el formulario
         setCantidad('');
         setConcepto('');
         setCategoriaSeleccionada(null);
         setSubcategoriaSeleccionada(null);
         setFecha(new Date());
+        setDuplicate(false);
         setModalVisible(false);
     };
+
+    const handleEdit = () => {
+        setEditable(true);
+    }
 
     const handleDelete = async () => {
         try {
             await handleDeleteMovimiento(movimiento);
 
-            //Limpiamos el formulario
             setCantidad('');
             setConcepto('');
             setCategoriaSeleccionada(null);
@@ -102,13 +127,14 @@ export default function FormularioMovimiento({
     }
 
     const handleClose = () => {
-        //Limpiamos el formulario
         setCantidad('');
         setConcepto('');
         setCategoriaSeleccionada(null);
         setSubcategoriaSeleccionada(null);
         setFecha(new Date());
-        setMovimiento(null)
+        setMovimiento(null);
+        setEditable(false);
+        setDuplicate(false);
         setModalVisible(false);
     }
 
@@ -121,9 +147,18 @@ export default function FormularioMovimiento({
 
     const handleDuplicate = () => {
         setDuplicate(true);
+        setEditable(false);
     }
 
     const confirmDuplicate = () => {
+        if (!fecha) {
+            Alert.alert(
+                "Fecha requerida",
+                "Por favor, selecciona una fecha para el movimiento duplicado",
+                [{ text: "OK" }]
+            );
+            return;
+        }
         handleSubmit();
     }
 
@@ -151,7 +186,9 @@ export default function FormularioMovimiento({
             setCategoriaSeleccionada(null);
             setSubcategoriaSeleccionada(null);
             setFecha(new Date());
-            setMovimiento(null)
+            setMovimiento(null);
+            setDuplicate(false);
+
         }
     }, [movimiento, categorias, modalVisible]);
 
@@ -174,189 +211,226 @@ export default function FormularioMovimiento({
                                     <MaterialIcons name="close" size={24} color="#374151" />
                                 </TouchableOpacity>
                                 <Text className="text-2xl font-bold text-gray-800">
-                                    {tipoTransaccion === 'ingreso' ? 'Nuevo Ingreso' : 'Nuevo Gasto'}
+                                    {tipoTransaccion === 'ingreso' && (editable || !movimiento) ? 'Nuevo Ingreso' : editable || !movimiento ? 'Nuevo Gasto' : movimiento?.concepto}
                                 </Text>
                             </View>
-                            <TouchableOpacity
-                                className="bg-blue-600 p-4 rounded-full shadow-lg flex-row items-center space-x-2"
-                                onPress={() => setShowScanner(true)}
-                            >
-                                <MaterialIcons name="receipt" size={24} color="white" />
-                                <Text className="text-white font-medium">Escanear</Text>
-                            </TouchableOpacity>
+                            {editable || !movimiento ?
+                                <TouchableOpacity
+                                    className="bg-blue-600 p-4 rounded-full shadow-lg flex-row items-center space-x-2"
+                                    onPress={() => setShowScanner(true)}
+                                >
+                                    <MaterialIcons name="camera-alt" size={24} color="white" />
+                                </TouchableOpacity> : null}
                         </View>
 
                         <ScrollView className='max-h-[600px]' showsVerticalScrollIndicator={true}>
-                            <View className="mb-6">
-                                <Text className="text-gray-700 font-medium mb-2">
-                                    Tipo de Transacción
-                                </Text>
-                                <View className="flex-row space-x-4 gap-2">
-                                    <TouchableOpacity
-                                        className={`flex-1 border-2 rounded-xl px-4 py-3 ${tipoTransaccion === 'gasto' ? 'bg-red-500 border-red-500' : 'border-gray-300'}`}
-                                        onPress={() => {
-                                            setTipoTransaccion('gasto');
-                                            if (cantidad) {
-                                                setCantidad(Math.abs(parseFloat(cantidad)).toString());
-                                            }
-                                        }}
-                                    >
-                                        <Text className={`text-center font-medium ${tipoTransaccion === 'gasto' ? 'text-white' : 'text-gray-600'}`}>
-                                            Gasto
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        className={`flex-1 border-2 rounded-xl px-4 py-3 ${tipoTransaccion === 'ingreso' ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}
-                                        onPress={() => {
-                                            setTipoTransaccion('ingreso');
-                                            if (cantidad) {
-                                                setCantidad(Math.abs(parseFloat(cantidad)).toString());
-                                            }
-                                        }}
-                                    >
-                                        <Text className={`text-center font-medium ${tipoTransaccion === 'ingreso' ? 'text-white' : 'text-gray-600'}`}>
-                                            Ingreso
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+                            {editable || !movimiento ? (
+                                // Vista de formulario editable
+                                <>
+                                    <View className="mb-6">
+                                        <View className="flex-row space-x-4 gap-2">
+                                            <TouchableOpacity
+                                                className={`flex-1 border-2 rounded-xl px-4 py-3 ${tipoTransaccion === 'gasto' ? 'bg-red-500 border-red-500' : 'border-gray-300'}`}
+                                                onPress={() => {
+                                                    setTipoTransaccion('gasto');
+                                                    if (cantidad) {
+                                                        setCantidad(Math.abs(parseFloat(cantidad)).toString());
+                                                    }
+                                                }}
+                                            >
+                                                <Text className={`text-center font-medium ${tipoTransaccion === 'gasto' ? 'text-white' : 'text-gray-600'}`}>
+                                                    Gasto
+                                                </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                className={`flex-1 border-2 rounded-xl px-4 py-3 ${tipoTransaccion === 'ingreso' ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}
+                                                onPress={() => {
+                                                    setTipoTransaccion('ingreso');
+                                                    if (cantidad) {
+                                                        setCantidad(Math.abs(parseFloat(cantidad)).toString());
+                                                    }
+                                                }}
+                                            >
+                                                <Text className={`text-center font-medium ${tipoTransaccion === 'ingreso' ? 'text-white' : 'text-gray-600'}`}>
+                                                    Ingreso
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
 
-                            <View className="mb-6">
-                                <Text className="text-gray-700 font-medium mb-2">
-                                    Cantidad <Text className="text-red-500">*</Text>
-                                </Text>
-                                <TextInput
-                                    className="border-2 border-gray-300 w-full rounded-xl px-4 py-3 text-lg"
-                                    placeholder="0.00"
-                                    value={cantidad}
-                                    keyboardType='numeric'
-                                    onChangeText={(text) => {
-                                        if (/^\d*\.?\d*$/.test(text)) {
-                                            setCantidad(text);
-                                        }
-                                    }}
-                                />
-                            </View>
-
-                            <View className="mb-6">
-                                <Text className="text-gray-700 font-medium mb-2">
-                                    Concepto
-                                </Text>
-                                <TextInput
-                                    className="border-2 border-gray-300 w-full rounded-xl px-4 py-3"
-                                    placeholder="¿En qué has gastado?"
-                                    value={concepto}
-                                    onChangeText={setConcepto}
-                                />
-                            </View>
-
-                            <View className="mb-6">
-                                <Text className="text-gray-700 font-medium mb-2">
-                                    Fecha <Text className="text-red-500">*</Text>
-                                </Text>
-                                <TouchableOpacity
-                                    className="border-2 border-gray-300 rounded-xl px-4 py-3"
-                                    onPress={() => setShowDatePicker(true)}
-                                >
-                                    <Text className="text-gray-700">{fecha.toLocaleDateString()}</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View className="mb-6">
-                                <Text className="text-gray-700 font-medium mb-2">
-                                    Descripción
-                                </Text>
-                                <TextInput
-                                    className="border-2 border-gray-300 w-full rounded-xl px-4 py-3"
-                                    placeholder="Añade una descripción (opcional)"
-                                    value={descripcion}
-                                    onChangeText={setDescripcion}
-                                    multiline={true}
-                                    numberOfLines={3}
-                                />
-                            </View>
-
-                            <View className="mb-6">
-                                <View className="flex-row justify-between items-center mb-2">
-                                    <Text className="text-gray-700 font-medium">
-                                        Categoría
-                                    </Text>
-                                    <TouchableOpacity
-                                        className="bg-blue-500 px-4 py-2 rounded-lg shadow-sm"
-                                        onPress={() => setShowAddCategory(true)}
-                                    >
-                                        <Text className="text-white font-medium">
-                                            {categoriaSeleccionada ? 'Editar' : 'Añadir'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                                <View className="border-2 border-gray-300 rounded-xl overflow-hidden">
-                                    <Picker
-                                        selectedValue={categoriaSeleccionada?.id}
-                                        onValueChange={(itemValue) => {
-                                            if (!itemValue) {
-                                                setCategoriaSeleccionada(null);
-                                                setSubcategoriaSeleccionada(null);
-                                                return;
-                                            }
-                                            const categoria = categorias.find(c => c.id === itemValue);
-                                            if (categoria) {
-                                                setCategoriaSeleccionada(categoria);
-                                                setSubcategoriaSeleccionada(null);
-                                            }
-                                        }}
-                                        className="h-12 w-full bg-transparent"
-                                    >
-                                        <Picker.Item
-                                            label="Selecciona una categoría"
-                                            value={null}
+                                    <View className="mb-6">
+                                        <TextInput
+                                            className="border-2 border-gray-300 w-full rounded-xl px-4 py-3"
+                                            placeholder="¿En qué has gastado?"
+                                            value={concepto}
+                                            onChangeText={setConcepto}
                                         />
-                                        {categorias.map(c => (
-                                            <Picker.Item
-                                                key={c?.id}
-                                                label={c?.nombre}
-                                                value={c.id}
-                                            />
-                                        ))}
-                                    </Picker>
-                                </View>
-                            </View>
+                                    </View>
 
-                            {categoriaSeleccionada && (
-                                <View className="mb-6">
-                                    <Text className="text-gray-700 font-medium mb-2">
-                                        Subcategorías
-                                    </Text>
-                                    {categoriaSeleccionada.subcategorias && categoriaSeleccionada.subcategorias.length > 0 && (
+                                    <View className="mb-6">
+                                        <TextInput
+                                            className="border-2 border-gray-300 w-full rounded-xl px-4 py-3 text-lg"
+                                            placeholder="Importe *"
+                                            value={cantidad}
+                                            keyboardType='numeric'
+                                            onChangeText={(text) => {
+                                                if (/^\d*\.?\d*$/.test(text)) {
+                                                    setCantidad(text);
+                                                }
+                                            }}
+                                        />
+                                    </View>
+
+                                    <View className="mb-6">
+                                        <TouchableOpacity
+                                            className="border-2 border-gray-300 rounded-xl px-4 py-3"
+                                            onPress={() => setShowDatePicker(true)}
+                                        >
+                                            <Text className="text-gray-700">{fecha.toLocaleDateString()}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <View className="mb-6">
+                                        <TextInput
+                                            className="border-2 border-gray-300 w-full rounded-xl px-4 py-3"
+                                            placeholder="Añade una descripción (opcional)"
+                                            value={descripcion}
+                                            onChangeText={setDescripcion}
+                                            multiline={true}
+                                            numberOfLines={3}
+                                        />
+                                    </View>
+
+                                    <View className="mb-6">
+                                        <View className="flex-row justify-between items-center mb-2">
+                                            <TouchableOpacity
+                                                className="bg-blue-500 px-4 py-2 rounded-lg shadow-sm"
+                                                onPress={() => setShowAddCategory(true)}
+                                            >
+                                                <Text className="text-white font-medium">
+                                                    {categoriaSeleccionada ? 'Editar' : 'Añadir'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
                                         <View className="border-2 border-gray-300 rounded-xl overflow-hidden">
                                             <Picker
-                                                selectedValue={subcategoriaSeleccionada?.id}
+                                                selectedValue={categoriaSeleccionada?.id}
                                                 onValueChange={(itemValue) => {
                                                     if (!itemValue) {
+                                                        setCategoriaSeleccionada(null);
                                                         setSubcategoriaSeleccionada(null);
                                                         return;
                                                     }
-                                                    const subcategoria = categoriaSeleccionada.subcategorias?.find(
-                                                        s => s.id === itemValue
-                                                    );
-                                                    if (subcategoria) {
-                                                        setSubcategoriaSeleccionada(subcategoria);
+                                                    const categoria = categorias.find(c => c.id === itemValue);
+                                                    if (categoria) {
+                                                        setCategoriaSeleccionada(categoria);
+                                                        setSubcategoriaSeleccionada(null);
                                                     }
                                                 }}
                                                 className="h-12 w-full bg-transparent"
                                             >
                                                 <Picker.Item
-                                                    label="Selecciona una subcategoría"
+                                                    label="Selecciona una categoría"
                                                     value={null}
                                                 />
-                                                {categoriaSeleccionada.subcategorias.map(sub => (
-                                                    <Picker.Item
-                                                        key={sub.id}
-                                                        label={sub.nombre}
-                                                        value={sub.id}
-                                                    />
-                                                ))}
+                                                {categorias
+                                                    .filter(cat => cat.tipo === tipoTransaccion)
+                                                    .map(c => (
+                                                        <Picker.Item
+                                                            key={c?.id}
+                                                            label={c?.nombre}
+                                                            value={c.id}
+                                                        />
+                                                    ))}
                                             </Picker>
+                                        </View>
+                                    </View>
+
+                                    {categoriaSeleccionada && (
+                                        <View className="mb-6">
+                                            <Text className="text-gray-700 font-medium mb-2">
+                                                Subcategorías
+                                            </Text>
+                                            {categoriaSeleccionada.subcategorias && categoriaSeleccionada.subcategorias.length > 0 && (
+                                                <View className="border-2 border-gray-300 rounded-xl overflow-hidden">
+                                                    <Picker
+                                                        selectedValue={subcategoriaSeleccionada?.id}
+                                                        onValueChange={(itemValue) => {
+                                                            if (!itemValue) {
+                                                                setSubcategoriaSeleccionada(null);
+                                                                return;
+                                                            }
+                                                            const subcategoria = categoriaSeleccionada.subcategorias?.find(
+                                                                s => s.id === itemValue
+                                                            );
+                                                            if (subcategoria) {
+                                                                setSubcategoriaSeleccionada(subcategoria);
+                                                            }
+                                                        }}
+                                                        className="h-12 w-full bg-transparent"
+                                                    >
+                                                        <Picker.Item
+                                                            label="Selecciona una subcategoría"
+                                                            value={null}
+                                                        />
+                                                        {categoriaSeleccionada.subcategorias.map(sub => (
+                                                            <Picker.Item
+                                                                key={sub.id}
+                                                                label={sub.nombre}
+                                                                value={sub.id}
+                                                            />
+                                                        ))}
+                                                    </Picker>
+                                                </View>
+                                            )}
+                                        </View>
+                                    )}
+                                </>
+                            ) : (
+                                // Vista de información ampliada
+                                <View className="space-y-6">
+                                    <View className="bg-gray-50 p-4 rounded-xl">
+                                        <Text className="text-gray-500 text-sm mb-1">Tipo de transacción</Text>
+                                        <View className={`inline-flex px-3 py-1 rounded-full ${tipoTransaccion === 'ingreso' ? 'bg-green-100' : 'bg-red-100'}`}>
+                                            <Text className={`font-medium ${tipoTransaccion === 'ingreso' ? 'text-green-700' : 'text-red-700'}`}>
+                                                {tipoTransaccion === 'ingreso' ? 'Ingreso' : 'Gasto'}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    <View className="bg-gray-50 p-4 rounded-xl">
+                                        <Text className="text-gray-500 text-sm mb-1">Concepto</Text>
+                                        <Text className="text-lg font-medium text-gray-800">{concepto}</Text>
+                                    </View>
+
+                                    <View className="bg-gray-50 p-4 rounded-xl">
+                                        <Text className="text-gray-500 text-sm mb-1">Importe</Text>
+                                        <Text className={`text-2xl font-bold ${tipoTransaccion === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
+                                            {tipoTransaccion === 'ingreso' ? '+' : '-'}{cantidad}€
+                                        </Text>
+                                    </View>
+
+                                    <View className="bg-gray-50 p-4 rounded-xl">
+                                        <Text className="text-gray-500 text-sm mb-1">Fecha</Text>
+                                        <Text className="text-lg font-medium text-gray-800">{fecha.toLocaleDateString()}</Text>
+                                    </View>
+
+                                    {descripcion && (
+                                        <View className="bg-gray-50 p-4 rounded-xl">
+                                            <Text className="text-gray-500 text-sm mb-1">Descripción</Text>
+                                            <Text className="text-lg text-gray-800">{descripcion}</Text>
+                                        </View>
+                                    )}
+
+                                    <View className="bg-gray-50 p-4 rounded-xl">
+                                        <Text className="text-gray-500 text-sm mb-1">Categoría</Text>
+                                        <Text className="text-lg font-medium text-gray-800">{categoriaSeleccionada?.nombre}</Text>
+                                    </View>
+
+                                    {subcategoriaSeleccionada && (
+                                        <View className="bg-gray-50 p-4 rounded-xl">
+                                            <Text className="text-gray-500 text-sm mb-1">Subcategoría</Text>
+                                            <Text className="text-lg font-medium text-gray-800">{subcategoriaSeleccionada.nombre}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -375,31 +449,40 @@ export default function FormularioMovimiento({
                             )}
                         </ScrollView>
 
-                        <View className="flex-row justify-between mt-8">
-                            {movimiento && (
+                        <View className="flex-row gap-4 justify-start mt-8">
+                            {movimiento && !editable ? (
                                 <TouchableOpacity
                                     className="bg-red-500 px-6 py-3 rounded-xl shadow-sm"
                                     onPress={handleDelete}
                                 >
-                                    <Text className="text-white font-medium">Eliminar</Text>
+                                    <MaterialIcons name="delete" size={24} color="white" />
                                 </TouchableOpacity>
-                            )}
+                            ) : null}
 
                             {movimiento && (
                                 <TouchableOpacity
                                     className="bg-blue-500 px-6 py-3 rounded-xl shadow-sm"
                                     onPress={handleDuplicate}
                                 >
-                                    <Text className="text-white font-medium">Duplicar</Text>
+                                    <MaterialIcons name="content-copy" size={24} color="white" />
                                 </TouchableOpacity>
                             )}
 
-                            <TouchableOpacity
-                                className="bg-green-600 px-6 py-3 rounded-xl shadow-sm"
-                                onPress={handleSubmit}
-                            >
-                                <Text className="text-white font-medium">Guardar</Text>
-                            </TouchableOpacity>
+                            {editable || !movimiento ?
+                                (<TouchableOpacity
+                                    className="bg-green-400 px-6 py-3 rounded-xl shadow-sm ml-auto"
+                                    onPress={handleSubmit}
+                                >
+                                    <MaterialIcons name="save" size={24} color="white" />
+                                </TouchableOpacity>) : (
+                                    <TouchableOpacity
+                                        className="bg-blue-400 px-6 py-3 rounded-xl shadow-sm ml-auto"
+                                        onPress={handleEdit}
+                                    >
+                                        <MaterialIcons name="edit" size={24} color="white" />
+                                    </TouchableOpacity>
+                                )
+                            }
                         </View>
                     </View>
                 </View>
@@ -425,12 +508,39 @@ export default function FormularioMovimiento({
 
                 <ModalConfirmacion
                     visible={duplicate}
-                    onClose={() => setDuplicate(false)}
+                    onClose={() => {
+                        setDuplicate(false);
+                    }}
                     onConfirm={confirmDuplicate}
                     titulo="Confirmar duplicación"
                     mensaje="¿Estás seguro de que quieres duplicar este movimiento?"
                     textoConfirmar="Duplicar"
-                />
+                >
+                    <View className="mt-4">
+                        <Text className="text-gray-600 mb-2">Selecciona la fecha para el movimiento duplicado:</Text>
+                        <TouchableOpacity
+                            className="border-2 border-gray-300 rounded-xl px-4 py-3 mb-4"
+                            onPress={() => setShowDuplicateDatePicker(true)}
+                        >
+                            <Text className="text-gray-700">
+                                {fecha ? fecha.toLocaleDateString() : 'Seleccionar fecha'}
+                            </Text>
+                        </TouchableOpacity>
+                        {showDuplicateDatePicker && (
+                            <DateTimePicker
+                                value={fecha || new Date()}
+                                mode="date"
+                                display="default"
+                                onChange={(e, selectedDate) => {
+                                    setShowDuplicateDatePicker(false);
+                                    if (selectedDate) {
+                                        setFecha(selectedDate);
+                                    }
+                                }}
+                            />
+                        )}
+                    </View>
+                </ModalConfirmacion>
 
                 <FormularioCategoria
                     modalVisible={showAddCategory}
