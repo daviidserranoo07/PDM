@@ -1,4 +1,5 @@
 import { Categoria } from "@/models/Categoria";
+import { Movimiento } from "@/models/Movimiento";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { CategoryContext } from "./CategoryContext";
@@ -79,12 +80,25 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     const handleDeleteCategoria = async (categoriaEliminada: Categoria) => {
         try {
             const data = await AsyncStorage.getItem('categorias');
+            const dataMovimiento = await AsyncStorage.getItem('historico');
             if (data) {
                 const categoriasActuales = await JSON.parse(data);
                 const nuevasCategoria = categoriasActuales
                     .filter((categoria: Categoria) => categoria && categoria.id !== categoriaEliminada.id)
                     .filter(Boolean);
                 await AsyncStorage.setItem('categorias', JSON.stringify(nuevasCategoria));
+                //Si hay movimientos
+                if (dataMovimiento) {
+                    const movimientos = await JSON.parse(dataMovimiento);
+                    //Obtenemos un nuevo array de movimientos que no sean de la categoria actual
+                    const nuevosMovimientos = movimientos.filter((movimiento: Movimiento) => {
+                        if (movimiento.categoria.id !== categoriaEliminada.id) {
+                            return movimiento;
+                        }
+                    });
+                    await AsyncStorage.setItem('historico', JSON.stringify(nuevosMovimientos));
+                }
+
                 setCategorias(nuevasCategoria);
             }
         } catch (error) {

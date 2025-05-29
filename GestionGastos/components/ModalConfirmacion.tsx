@@ -3,8 +3,8 @@ import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
 interface ModalConfirmacionProps {
     visible: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
+    onClose: Function;
+    onConfirm: Function;
     titulo: string;
     mensaje: string;
     textoCancelar?: string;

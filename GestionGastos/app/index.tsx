@@ -174,10 +174,9 @@ export default function Index() {
     });
 
     setGastosMensuales(ordered);
-
     // Calculamos los totales usando todos los movimientos del rango de fechas
     const movimientosEnRango = historicoMovimientos.filter(movimiento => {
-      const fechaMovimiento = new Date(movimiento.fecha);
+      const fechaMovimiento = new Date(movimiento?.fecha);
       // Ajustamos las fechas para incluir el día completo
       const fechaInicioAjustada = new Date(fechaInicio);
       fechaInicioAjustada.setHours(0, 0, 0, 0);
@@ -203,7 +202,7 @@ export default function Index() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [categorias]);
 
   useEffect(() => {
     if (historicoMovimientos) {

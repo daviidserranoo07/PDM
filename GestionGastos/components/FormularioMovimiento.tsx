@@ -89,7 +89,6 @@ export default function FormularioMovimiento({
         let movimientoActual = movimiento;
         if (duplicate) {
             movimientoActual = null;
-            console.log(fecha);
         }
 
         if (tipoTransaccion === 'ingreso') {
