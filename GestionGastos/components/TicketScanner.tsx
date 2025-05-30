@@ -122,66 +122,79 @@ export default function TicketScanner({ onTicketProcessed }: { onTicketProcessed
         }
     };
 
-    //Función para obtener la información de la imagen después de pasarlo por el OCR
     const parseTicketText = (text: string) => {
-        const lines = text.split('\n');
-        console.log("lines", lines);
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
         let total = 0;
         let concepto = '';
-        let fecha = new Date();
+        let fecha: Date | null = null;
 
-        //Buscar en el texto una fecha con formaro DD/MM/YYYY o DD-MM-YYYY o DD.MM.YYYY
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const dateMatch = line.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
-            if (dateMatch) {
-                const [_, day, month, year] = dateMatch;
-                const fullYear = year.length === 2 ? 2000 + parseInt(year) : parseInt(year);
-                fecha = new Date(fullYear, parseInt(month) - 1, parseInt(day));
-                break;
-            }
-        }
-
-        // Buscar total, y en caso de haber varios cogemos el que tenga mayor valor
-        let maxTotal = 0;
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            if (line.toUpperCase().includes('TOTAL')) {
-                const priceMatch = line.match(/(\d+[.,]\d{2})€?/);
-                if (priceMatch) {
-                    const currentTotal = parseFloat(priceMatch[1].replace(',', '.'));
-                    if (currentTotal > maxTotal) {
-                        maxTotal = currentTotal;
-                    }
-                }
-            }
-        }
-        total = maxTotal;
-
-        // Buscamos el nombre de la tienda en las primeras primeras líneas
-        for (let i = 0; i < Math.min(5, lines.length); i++) {
-            const line = lines[i].trim();
-            if (line && !line.match(/(\d+[.,]\d{2})€?/) && !line.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/)) {
+        for (const line of lines) {
+            if (/^[A-Z\s]+$/.test(line) && line.length > 3) {
                 concepto = line;
                 break;
             }
         }
 
-        //Si no encontramos nada le ponemos de nombre ticket
-        if (!concepto) {
-            concepto = 'Ticket';
+        for (const line of lines) {
+            const dateTimeMatch = line.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})[ T](\d{2}):(\d{2}):(\d{2})/);
+            if (dateTimeMatch) {
+                const [, day, month, year, hour, minute, second] = dateTimeMatch;
+                fecha = new Date(
+                    parseInt(year),
+                    parseInt(month) - 1,
+                    parseInt(day),
+                    parseInt(hour),
+                    parseInt(minute),
+                    parseInt(second)
+                );
+                break;
+            }
         }
 
-        console.log("Total:", total);
-        console.log("Concepto:", concepto);
-        console.log("Fecha:", fecha);
+        if (!fecha) {
+            for (const line of lines) {
+                const dateMatch = line.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})/);
+                if (dateMatch) {
+                    const [, day, month, year] = dateMatch;
+                    fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    break;
+                }
+            }
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].toUpperCase().includes('TOTAL')) {
+                let candidates: number[] = [];
+                const priceMatches = lines[i].match(/(\d+[.,]\d{2})/g);
+                if (priceMatches) {
+                    candidates.push(...priceMatches.map(p => parseFloat(p.replace(',', '.'))));
+                }
+                for (let j = 1; j <= 2; j++) {
+                    if (lines[i + j]) {
+                        const nextMatches = lines[i + j].match(/(\d+[.,]\d{2})/g);
+                        if (nextMatches) {
+                            candidates.push(...nextMatches.map(p => parseFloat(p.replace(',', '.'))));
+                        }
+                    }
+                }
+                if (candidates.length > 0) {
+                    total = Math.max(...candidates);
+                    break;
+                }
+            }
+        }
+
+        //Valores por defecto
+        if (!fecha) fecha = new Date();
+        if (!total) total = 0;
 
         return {
-            concepto: concepto,
-            cantidad: total,
-            fecha: fecha
+            concepto,
+            cantidad: parseFloat(total.toFixed(2)),
+            fecha
         };
     };
+
 
     return (
         <View className="flex-1 items-center justify-center">
