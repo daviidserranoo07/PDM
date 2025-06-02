@@ -92,9 +92,9 @@ export default function FormularioMovimiento({
         }
 
         if (tipoTransaccion === 'ingreso') {
-            await handleIngreso(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
+            await handleIngreso('ingreso', cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
         } else {
-            await handleGasto(cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
+            await handleGasto('gasto', cantidadNum, concepto, descripcion, fecha, categoriaSeleccionada, subcategoriaSeleccionada, movimientoActual);
         }
 
         setCantidad('');

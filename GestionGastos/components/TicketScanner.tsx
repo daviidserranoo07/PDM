@@ -28,7 +28,7 @@ export default function TicketScanner({ onTicketProcessed }: { onTicketProcessed
         }
     };
 
-    //Procesamos la imagen pasandola por un OCR
+    //Transformamos la imagen a base 64 y reducimos su calidad para que sea inferior a 1024
     const processImage = async (imageUri: string) => {
         try {
             const manipulatedImage = await ImageManipulator.manipulateAsync(
@@ -136,29 +136,11 @@ export default function TicketScanner({ onTicketProcessed }: { onTicketProcessed
         }
 
         for (const line of lines) {
-            const dateTimeMatch = line.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})[ T](\d{2}):(\d{2}):(\d{2})/);
-            if (dateTimeMatch) {
-                const [, day, month, year, hour, minute, second] = dateTimeMatch;
-                fecha = new Date(
-                    parseInt(year),
-                    parseInt(month) - 1,
-                    parseInt(day),
-                    parseInt(hour),
-                    parseInt(minute),
-                    parseInt(second)
-                );
+            const dateMatch = line.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})/);
+            if (dateMatch) {
+                const [, day, month, year] = dateMatch;
+                fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                 break;
-            }
-        }
-
-        if (!fecha) {
-            for (const line of lines) {
-                const dateMatch = line.match(/(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{4})/);
-                if (dateMatch) {
-                    const [, day, month, year] = dateMatch;
-                    fecha = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                    break;
-                }
             }
         }
 

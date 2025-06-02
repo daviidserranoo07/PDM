@@ -59,83 +59,60 @@ export default function Index() {
     }
   }
 
-  const handleIngreso = async (cantidad: number, concepto: string, descripcion: string, fecha: Date, categoria: Categoria, subcategoria: Subcategoria, ingreso: Movimiento) => {
+  const handleMovimiento = async (
+    tipo: 'ingreso' | 'gasto',
+    cantidad: number,
+    concepto: string,
+    descripcion: string,
+    fecha: Date,
+    categoria: Categoria,
+    subcategoria: Subcategoria,
+    movimientoExistente: Movimiento | null
+  ) => {
     try {
-      const nuevoIngreso: Movimiento = {
-        id: ingreso ? ingreso.id : Date.now().toString(),
+      // Si es gasto, la cantidad debe ser negativa
+      const cantidadFinal = tipo === 'gasto'
+        ? (cantidad > 0 ? -cantidad : cantidad)
+        : cantidad;
+
+      console.log(fecha);
+
+      const nuevoMovimiento: Movimiento = {
+        id: movimientoExistente ? movimientoExistente.id : Date.now().toString(),
         concepto,
         descripcion,
-        cantidad: cantidad,
+        cantidad: cantidadFinal,
         fecha: fecha.toISOString(),
         categoria,
         subcategoria
       };
 
       let nuevoHistorico: Movimiento[];
-      if (!ingreso) {
-        nuevoHistorico = [...historicoMovimientos, nuevoIngreso];
+      if (!movimientoExistente) {
+        nuevoHistorico = [...historicoMovimientos, nuevoMovimiento];
       } else {
         nuevoHistorico = historicoMovimientos.map((current) =>
-          current.id === ingreso.id ? nuevoIngreso : current
+          current.id === movimientoExistente.id ? nuevoMovimiento : current
         );
       }
 
       await AsyncStorage.setItem('historico', JSON.stringify(nuevoHistorico));
       setHistoricoMovimientos(nuevoHistorico);
 
+      // Totales
       const totalIngresos = nuevoHistorico
-        .filter(ing => ing.cantidad > 0)
-        .reduce((sum, ing) => sum + ing.cantidad, 0);
+        .filter(mov => mov.cantidad > 0)
+        .reduce((sum, mov) => sum + mov.cantidad, 0);
 
       const totalGastos = nuevoHistorico
-        .filter(ing => ing.cantidad < 0)
-        .reduce((sum, ing) => sum + Math.abs(ing.cantidad), 0);
+        .filter(mov => mov.cantidad < 0)
+        .reduce((sum, mov) => sum + Math.abs(mov.cantidad), 0);
 
       setIngresos(totalIngresos);
       setGastos(totalGastos);
       setSaldo(totalIngresos - totalGastos);
     } catch (error) {
-      console.error('Error al guardar ingreso:', error);
-    }
-  };
-
-  const handleGasto = async (cantidad: number, concepto: string, descripcion: string, fecha: Date, categoria: Categoria, subcategoria: Subcategoria, gasto: Movimiento) => {
-    try {
-      const nuevoGasto: Movimiento = {
-        id: gasto ? gasto.id : Date.now().toString(),
-        concepto,
-        descripcion,
-        cantidad: cantidad > 0 ? -cantidad : cantidad,
-        fecha: fecha.toISOString(),
-        categoria,
-        subcategoria
-      };
-
-      let nuevoHistorico: Movimiento[];
-      if (!gasto) {
-        nuevoHistorico = [...historicoMovimientos, nuevoGasto];
-      } else {
-        nuevoHistorico = historicoMovimientos.map((current) =>
-          current.id === gasto.id ? nuevoGasto : current
-        );
-      }
-
-      await AsyncStorage.setItem('historico', JSON.stringify(nuevoHistorico));
-      setHistoricoMovimientos(nuevoHistorico);
-
-      const totalGastos = nuevoHistorico
-        .filter(ing => ing.cantidad < 0)
-        .reduce((sum, ing) => sum + Math.abs(ing.cantidad), 0);
-
-      const totalIngresos = nuevoHistorico
-        .filter(ing => ing.cantidad > 0)
-        .reduce((sum, ing) => sum + ing.cantidad, 0);
-
-      setGastos(totalGastos);
-      setIngresos(totalIngresos);
-      setSaldo(totalIngresos - totalGastos);
-    } catch (error) {
-      console.error('Error al guardar gasto:', error);
+      console.error('Error al guardar movimiento:', error);
     }
   };
 
@@ -466,8 +443,8 @@ export default function Index() {
       </View>
 
       <FormularioMovimiento
-        handleIngreso={handleIngreso}
-        handleGasto={handleGasto}
+        handleIngreso={handleMovimiento}
+        handleGasto={handleMovimiento}
         tipoTransaccion={tipoTransaccion}
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
